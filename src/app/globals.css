@@ -1,0 +1,500 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "PP Mondwest";
+  src: url("/fonts/PPMondwest-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme inline {
+  --color-black: #000000;
+  --color-white: #ffffff;
+  --color-gray-950: #0a0a0a;
+  --color-gray-900: #111111;
+  --color-gray-800: #1a1a1a;
+  --color-gray-700: #2a2a2a;
+  --color-gray-600: #3a3a3a;
+  --color-gray-500: #555555;
+  --color-gray-400: #888888;
+  --color-gray-300: #aaaaaa;
+  --color-gray-200: #cccccc;
+  --color-gray-100: #e5e5e5;
+  --color-gray-50: #f5f5f5;
+  --color-warm-50: #f8f7f5;
+  --color-warm-100: #f0eee9;
+  --color-warm-200: #e2dfd8;
+  --color-accent: #c8ff00;
+  --color-accent-dim: #a0cc00;
+  --color-frontier: #c8ff00;
+  --color-collective: #ff6b35;
+  --color-partners: #0055ff;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-inter: "Inter", ui-sans-serif, sans-serif;
+  --font-serif-display: "Instrument Serif", Georgia, serif;
+  --animate-fade-in: fadeIn 0.6s ease-out both;
+  --animate-slide-up: slideUp 0.6s ease-out both;
+  --animate-fade-in-slow: fadeIn 1s ease-out both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Light world selection */
+::selection {
+  background: #0a0a0a;
+  color: #ffffff;
+}
+
+/* Dark world selection */
+.dark-world ::selection {
+  background: #c8ff00;
+  color: #000000;
+}
+
+/* Glass utility (dark world) */
+.glass {
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Glass utility (light world) */
+.glass-light {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* Glass nav pill — stripe.dev style */
+.nav-pill {
+  background: rgba(255, 255, 255, 1.0);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 6px;
+  padding: 4px 10px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.nav-pill:hover {
+  background: rgba(255, 255, 255, 1.0);
+  border-color: rgba(0, 0, 0, 0.18);
+}
+
+/* Dark variant */
+.nav-pill-dark {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 4px 10px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.nav-pill-dark:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* V2 Nav hover — rainbow bg animation WITHOUT padding/margin offsets */
+.v2-nav-hover {
+  transition: background-color 0.15s ease;
+}
+.v2-nav-hover:hover {
+  background-color: hsl(var(--rainbow-hue, 0), 85%, 88%);
+}
+
+/* V2 Nav dark pill — more opaque than nav-pill-dark */
+.v2-nav-pill-dark {
+  background: rgba(12, 12, 18, 0.97);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  padding: 4px 10px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.v2-nav-pill-dark:hover {
+  background: rgba(22, 22, 32, 1.0);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.v2-nav-hover-dark {
+  transition: background-color 0.15s ease;
+}
+.v2-nav-hover-dark:hover {
+  background-color: hsl(var(--rainbow-hue, 0), 60%, 25%);
+}
+
+/* Scroll reveal */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ---- V2 (Light / stripe.dev-inspired) ---- */
+
+.font-serif-display {
+  font-family: var(--font-serif-display);
+}
+
+.font-mono-ui {
+  font-family: var(--font-mono);
+}
+
+.font-body {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.font-heading {
+  font-family: 'PP Mondwest', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.font-mondwest {
+  font-family: 'PP Mondwest', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.font-space-mono {
+  font-family: var(--font-space-mono), ui-monospace, monospace;
+}
+
+.font-jetbrains {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+}
+
+.font-silkscreen {
+  font-family: var(--font-silkscreen), ui-monospace, monospace;
+}
+
+/* ─── Glow Button ─── */
+.glow-btn {
+  background: linear-gradient(to bottom, #222 0%, #0a0a0a 100%);
+  color: #ffffff;
+  border-top: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.8),
+    0 0 20px 4px rgba(0, 0, 0, 0.25),
+    0 0 40px 8px rgba(0, 0, 0, 0.12),
+    inset 0 1px 4px rgba(255, 255, 255, 0.25),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.5);
+  transition:
+    background 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.glow-btn:hover {
+  background: linear-gradient(to bottom, #2a2a2a 0%, #151515 100%);
+  border-top-color: rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.8),
+    0 0 30px 8px rgba(0, 0, 0, 0.3),
+    0 0 60px 16px rgba(0, 0, 0, 0.12),
+    inset 0 1px 6px rgba(255, 255, 255, 0.3),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.5);
+  transform: scale(1.02) translateY(-1px);
+}
+.glow-btn:active {
+  transform: scale(0.98) translateY(0px);
+  transition-duration: 0.1s;
+  border-top-color: rgba(255, 255, 255, 0.35);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.8),
+    0 0 12px 2px rgba(0, 0, 0, 0.3),
+    0 0 24px 4px rgba(0, 0, 0, 0.12),
+    inset 0 1px 2px rgba(255, 255, 255, 0.15),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.5);
+}
+.glow-btn-aura {
+  position: absolute;
+  inset: -8px;
+  border-radius: 14px;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Sparkle dots that drift on the button */
+@keyframes sparkle-drift {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.5);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(2px, -3px) scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: translate(-4px, 2px) scale(0.8);
+  }
+  85% {
+    opacity: 1;
+    transform: translate(3px, -1px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.5);
+  }
+}
+.sparkle-dot {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.7);
+  pointer-events: none;
+  z-index: 5;
+  animation: sparkle-drift 4s ease-in-out infinite;
+}
+
+/* Marquee */
+/* Shimmer text effect */
+.shimmer-text {
+  /* animation removed — kept class for styling hooks */
+}
+
+/* Rainbow hover highlight — cycles through hues while hovering */
+@keyframes rainbow-bg {
+  0%   { background-color: hsl(0, 85%, 88%); }
+  14%  { background-color: hsl(30, 85%, 88%); }
+  28%  { background-color: hsl(60, 80%, 85%); }
+  42%  { background-color: hsl(120, 70%, 87%); }
+  57%  { background-color: hsl(200, 80%, 87%); }
+  71%  { background-color: hsl(260, 75%, 88%); }
+  85%  { background-color: hsl(310, 75%, 88%); }
+  100% { background-color: hsl(360, 85%, 88%); }
+}
+
+.rainbow-hover {
+  transition: background-color 0.15s ease;
+  border-radius: 3px;
+  padding: 1px 4px;
+  margin: -1px -4px;
+}
+.rainbow-hover:hover {
+  background-color: hsl(var(--rainbow-hue, 0), 85%, 88%);
+}
+
+/* Rainbow hover for full-width rows/sections (no padding/margin offsets) */
+.rainbow-row-hover {
+  transition: background-color 0.15s ease;
+}
+.rainbow-row-hover:hover {
+  background-color: hsl(var(--rainbow-hue, 0), 85%, 88%);
+}
+
+/* Dark variant */
+@keyframes rainbow-bg-dark {
+  0%   { background-color: hsl(0, 60%, 25%); }
+  14%  { background-color: hsl(30, 60%, 25%); }
+  28%  { background-color: hsl(60, 50%, 22%); }
+  42%  { background-color: hsl(120, 45%, 22%); }
+  57%  { background-color: hsl(200, 55%, 25%); }
+  71%  { background-color: hsl(260, 50%, 25%); }
+  85%  { background-color: hsl(310, 50%, 25%); }
+  100% { background-color: hsl(360, 60%, 25%); }
+}
+
+.rainbow-hover-dark {
+  transition: background-color 0.15s ease;
+  border-radius: 3px;
+  padding: 1px 4px;
+  margin: -1px -4px;
+}
+.rainbow-hover-dark:hover {
+  background-color: hsl(var(--rainbow-hue, 0), 60%, 25%);
+}
+
+/* Rainbow text color — cycles the text color itself, not background */
+@keyframes rainbow-text {
+  0%   { color: hsl(0, 80%, 55%); }
+  14%  { color: hsl(30, 80%, 55%); }
+  28%  { color: hsl(60, 70%, 45%); }
+  42%  { color: hsl(120, 60%, 45%); }
+  57%  { color: hsl(200, 75%, 50%); }
+  71%  { color: hsl(260, 70%, 55%); }
+  85%  { color: hsl(310, 70%, 55%); }
+  100% { color: hsl(360, 80%, 55%); }
+}
+
+.rainbow-text-hover:hover {
+  color: hsl(var(--rainbow-hue, 0), 80%, 55%);
+  -webkit-text-fill-color: unset;
+  background: none;
+  -webkit-background-clip: unset;
+  background-clip: unset;
+}
+
+@keyframes marquee-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.marquee-content {
+  display: flex;
+  animation: marquee-scroll 40s linear infinite;
+}
+
+/* Massive footer text */
+.architects-text {
+  font-size: 17vw;
+  line-height: 0.8;
+  letter-spacing: -0.04em;
+  background: linear-gradient(180deg, #333 0%, #1a1a1a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Custom checkbox for filters */
+.custom-checkbox:checked + div {
+  background-color: #1a1a1a;
+  border-color: #1a1a1a;
+}
+.custom-checkbox:checked + div svg {
+  display: block;
+}
+
+/* Plus markers */
+.plus-marker {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  color: #999;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* V2 background — dynamic morphing gradient, DC blue family */
+.v2-bg {
+  background-color: #f9f9f8;
+  background-image:
+    radial-gradient(ellipse at 85% 8%,  hsl(var(--bg-hue-1, 228), 70%, 94%) 0%, transparent 55%),
+    radial-gradient(ellipse at 10% 15%, hsl(var(--bg-hue-2, 210), 60%, 95%) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, hsl(var(--bg-hue-3, 248), 55%, 95%) 0%, transparent 55%),
+    radial-gradient(ellipse at 30% 55%, hsl(var(--bg-hue-4, 220), 65%, 95%) 0%, transparent 50%);
+  background-attachment: fixed;
+}
+
+/* V2 selection */
+.v2-world ::selection {
+  background: #fef08a;
+  color: #000000;
+}
+
+/* V2 dark background — near-black, cobalt + green nebula mixing in top-right */
+.v2-bg-dark {
+  background-color: #0a0a0b;
+  background-image:
+    radial-gradient(ellipse at 72% 2%,  hsl(var(--bg-hue-1, 228), 80%, 18%) 0%, transparent 28%),
+    radial-gradient(ellipse at 93% 10%, hsl(var(--bg-hue-3, 148), 70%, 15%) 0%, transparent 26%),
+    radial-gradient(ellipse at 82% 7%,  hsl(var(--bg-hue-2, 195), 60%, 13%) 0%, transparent 20%);
+  background-attachment: fixed;
+}
+
+/* Dark feed row hover */
+.v2-dark .feed-row:hover {
+  background-color: hsl(var(--row-hue), 50%, 15%);
+}
+.v2-dark .feed-row:hover .feed-type-badge {
+  background-color: hsl(var(--row-hue), 60%, 45%);
+  color: white;
+  border-color: transparent;
+}
+
+/* Dark selection */
+.v2-dark ::selection {
+  background: #c8ff00;
+  color: #000000;
+}
+
+/* Rainbow feed row hover — cycles hue via CSS counter */
+.feed-row {
+  --row-hue: 0;
+  transition: background-color 0.15s ease;
+}
+.feed-row:hover {
+  background-color: hsl(var(--row-hue), 70%, 85%);
+}
+.feed-row:hover .feed-type-badge {
+  background-color: hsl(var(--row-hue), 60%, 55%);
+  color: white;
+  border-color: transparent;
+}
+
+/* ─── Section Tag — Hex-style tag with dashed border + diagonal stripe fill ─── */
+.section-tag {
+  display: inline-block;
+  font-family: var(--font-mono-ui, ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.55);
+  padding: 4px 10px;
+  border: 1px dashed rgba(0, 0, 0, 0.25);
+  border-radius: 3px;
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 3px,
+      rgba(0, 0, 0, 0.05) 3px,
+      rgba(0, 0, 0, 0.05) 4px
+    );
+}
+
+/* ─── Program Row Hover — diagonal stripes ─── */
+.program-row-hover {
+  background-image: none;
+  transition: background-image 0.3s ease;
+}
+.program-row-hover:hover {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 4px,
+    rgba(0, 0, 0, 0.08) 4px,
+    rgba(0, 0, 0, 0.08) 5px
+  );
+}
+
+/* ─── Marquee Filling Square ─── */
+@keyframes square-fill {
+  0%   { box-shadow: inset 0 0 0 0px currentColor; }
+  40%  { box-shadow: inset 0 0 0 1.5px currentColor; }
+  70%  { box-shadow: inset 0 0 0 3px currentColor; }
+  100% { box-shadow: inset 0 0 0 5px currentColor; }
+}
+.marquee-square {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border: 1px solid currentColor;
+  flex-shrink: 0;
+  animation: square-fill 2.5s ease-in-out infinite alternate;
+}
+
+/* ─── Film Grain Overlay (kept for staircase CRT reference) ─── */
+.film-grain-overlay {
+  display: none;
+}
