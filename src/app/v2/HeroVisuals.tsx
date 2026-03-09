@@ -1715,6 +1715,8 @@ export const heroVisuals = [
   { id: "signal", label: "8. Signal Amplifier", component: SignalVisual },
   { id: "blueprint", label: "9. Blueprint Unfold", component: BlueprintVisual },
   { id: "evolution", label: "10. Evolution Chain", component: EvolutionVisual },
+  { id: "unicorn-2", label: "11. Unicorn Scene (New)", component: null },
+  { id: "tree-3d", label: "12. 3D Growing Tree", component: null },
 ] as const;
 
 export type HeroVisualId = typeof heroVisuals[number]["id"];

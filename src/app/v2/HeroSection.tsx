@@ -16,6 +16,7 @@ import { useHeroVisual } from "./HeroVisualContext";
 import { heroVisuals } from "./HeroVisuals";
 
 const UnicornScene = dynamic(() => import("unicornstudio-react/next"), { ssr: false });
+const TreeScene = dynamic(() => import("./TreeScene"), { ssr: false });
 
 /* Grid constants — must match GridOverlay props */
 const COLUMNS = 7;
@@ -336,14 +337,29 @@ export default function HeroSection() {
                 background: `hsl(var(--rainbow-hue, 0), 60%, 45%)`,
               }}
             >
-              {/* Hero visual — either Unicorn Studio or canvas-based visual */}
-              {visualId === "original" ? (
+              {/* Hero visual — Unicorn Studio, 3D scene, or canvas-based visual */}
+              {visualId === "tree-3d" ? (
                 <>
-                  {/* Unicorn Studio scene — oversized so interactive parts don't clip */}
-                  <div style={{ position: "absolute", top: "-15%", left: "-15%", width: "145%", height: "150%" }}>
+                  <TreeScene width={stairW} height={stairH} />
+                  {/* CRT scanlines over 3D tree */}
+                  <div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.12) 2px, rgba(0,0,0,0.12) 3px)",
+                      opacity: 0.5,
+                    }}
+                  />
+                </>
+              ) : (visualId === "original" || visualId === "unicorn-2") ? (
+                <>
+                  {/* Unicorn Studio scene */}
+                  <div style={visualId === "unicorn-2"
+                    ? { position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }
+                    : { position: "absolute", top: "-15%", left: "-15%", width: "145%", height: "150%" }
+                  }>
                     <UnicornScene
-                      projectId={US_PROJECT_ID_NEW}
-                      sdkUrl={US_SDK_URL}
+                      projectId={visualId === "unicorn-2" ? "P8ECoi8pU2yZlvT96xi9" : US_PROJECT_ID_NEW}
+                      sdkUrl={visualId === "unicorn-2" ? "https://cdn.jsdelivr.net/gh/hiunicornstudio/unicornstudio.js@v2.1.3/dist/unicornStudio.umd.js" : US_SDK_URL}
                       width="100%"
                       height="100%"
                       scale={1}
@@ -361,7 +377,7 @@ export default function HeroSection() {
                       opacity: 0.6,
                     }}
                   />
-                  {/* Grayscale noise — original only */}
+                  {/* Grayscale noise */}
                   <div
                     className="absolute inset-0 pointer-events-none"
                     style={{
@@ -371,7 +387,7 @@ export default function HeroSection() {
                       mixBlendMode: "multiply",
                     }}
                   />
-                  {/* CRT scanlines — original only */}
+                  {/* CRT scanlines */}
                   <div
                     className="absolute inset-0 pointer-events-none"
                     style={{

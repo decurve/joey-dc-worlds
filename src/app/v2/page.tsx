@@ -68,11 +68,21 @@ const socialProofLogos = [
 ];
 
 const recentNewsletters = [
-  { title: "Your Growth Experiments Are Lying to You", type: "Tactics" },
-  { title: "Stop Pulling the Wrong Growth Levers", type: "Strategy" },
-  { title: "How Two Words Generated Millions in Revenue", type: "Case Study" },
-  { title: "The Channel Most Startups Pick Wrong", type: "Framework" },
-  { title: "Why Your Positioning Isn't Landing", type: "Deep Dive" },
+  { title: "Your Growth Experiments Are Lying to You", type: "Tactics", date: "Mar 4", number: "#247", readTime: "6 min" },
+  { title: "Stop Pulling the Wrong Growth Levers", type: "Strategy", date: "Feb 25", number: "#246", readTime: "8 min" },
+  { title: "How Two Words Generated Millions in Revenue", type: "Case Study", date: "Feb 18", number: "#245", readTime: "5 min" },
+  { title: "The Channel Most Startups Pick Wrong", type: "Framework", date: "Feb 11", number: "#244", readTime: "7 min" },
+  { title: "Why Your Positioning Isn't Landing", type: "Deep Dive", date: "Feb 4", number: "#243", readTime: "9 min" },
+  { title: "The Retention Playbook Nobody Talks About", type: "Playbook", date: "Jan 28", number: "#242", readTime: "7 min" },
+  { title: "How to Price When You Have No Idea", type: "Framework", date: "Jan 21", number: "#241", readTime: "6 min" },
+  { title: "The Landing Page That Converts at 3x", type: "Case Study", date: "Jan 14", number: "#240", readTime: "5 min" },
+];
+
+const newsletterStats = [
+  { value: "100K+", label: "Subscribers" },
+  { value: "247", label: "Editions" },
+  { value: "4,500+", label: "Startups Trained" },
+  { value: "Weekly", label: "Every Tuesday" },
 ];
 
 export default function V2Page() {
@@ -354,65 +364,203 @@ export default function V2Page() {
         </div>
       </section>
 
-        {/* 8. NEWSLETTER SIGNUP */}
-        <section id="newsletter">
-          <div className="py-20 md:py-28">
-            <div className="flex flex-col md:flex-row gap-0">
-              {/* Left column — newsletter content */}
-              <div className="flex-1 md:pr-12 md:border-r border-black/10">
-                <div className="section-tag mb-6">The Community</div>
-                <h2 className="font-heading text-4xl md:text-6xl tracking-tight mb-4">
-                  The Growth Newsletter
-                </h2>
-                <p className="text-neutral-600 font-light text-base leading-relaxed mb-8">
-                  Join 100,000+ operators receiving growth systems, tactics, and insights delivered straight from the frontier.
-                </p>
-                <div className="flex max-w-md gap-2 mb-3">
-                  <input
-                    type="email"
-                    placeholder="your@email.com"
-                    className="flex-1 border border-black/15 rounded-sm px-4 py-3 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-black/20 placeholder:text-neutral-400"
-                  />
-                  <button className="bg-black text-white px-5 py-3 rounded-sm hover:bg-neutral-800 transition-colors text-sm font-medium shrink-0">
-                    Subscribe
-                  </button>
-                </div>
-                <p className="text-xs text-neutral-400">
-                  Free. No spam. Unsubscribe anytime.
-                </p>
+        {/* 8. NEWSLETTER SIGNUP — V32 Broadsheet */}
+        <section id="newsletter" className="py-20 md:py-28">
+          <div className="relative mx-auto max-w-6xl px-6">
+            {/* Crop/registration marks */}
+            <div className="absolute -top-5 -left-5 w-8 h-8">
+              <div className="absolute top-0 left-3.5 w-px h-5 bg-black/30" />
+              <div className="absolute top-3.5 left-0 w-5 h-px bg-black/30" />
+              <div className="absolute top-2.5 left-2.5 w-2.5 h-2.5 rounded-full border border-black/25" />
+            </div>
+            <div className="absolute -top-5 -right-5 w-8 h-8">
+              <div className="absolute top-0 right-3.5 w-px h-5 bg-black/30" />
+              <div className="absolute top-3.5 right-0 w-5 h-px bg-black/30" />
+              <div className="absolute top-2.5 right-2.5 w-2.5 h-2.5 rounded-full border border-black/25" />
+            </div>
+            <div className="absolute -bottom-5 -left-5 w-8 h-8">
+              <div className="absolute bottom-0 left-3.5 w-px h-5 bg-black/30" />
+              <div className="absolute bottom-3.5 left-0 w-5 h-px bg-black/30" />
+              <div className="absolute bottom-2.5 left-2.5 w-2.5 h-2.5 rounded-full border border-black/25" />
+            </div>
+            <div className="absolute -bottom-5 -right-5 w-8 h-8">
+              <div className="absolute bottom-0 right-3.5 w-px h-5 bg-black/30" />
+              <div className="absolute bottom-3.5 right-0 w-5 h-px bg-black/30" />
+              <div className="absolute bottom-2.5 right-2.5 w-2.5 h-2.5 rounded-full border border-black/25" />
+            </div>
 
-                {/* Mini feed rows — recent editions */}
-                <div className="mt-12">
-                  <div className="font-mono-ui text-[10px] tracking-widest text-neutral-400 mb-3 uppercase">Recent Editions</div>
-                  <div className="border-t border-black/10">
-                    {recentNewsletters.map((item, i) => (
-                      <a
-                        key={item.title}
-                        href="#"
-                        className="feed-row flex items-center border-b border-black/10 px-4 py-3 group cursor-pointer"
-                        style={{ "--row-hue": `${(i * 60 + 20) % 360}` } as React.CSSProperties}
-                      >
-                        <div className="flex-1 text-sm md:text-base font-medium leading-tight">
-                          {item.title}
-                        </div>
-                        <span className="feed-type-badge inline-block rounded-sm px-2 py-0.5 text-[9px] font-mono-ui uppercase tracking-widest border border-black/10 bg-white transition-colors">
-                          {item.type}
-                        </span>
-                      </a>
+            {/* Color bar — top */}
+            <div className="flex h-1.5 mb-1">
+              {["#000","#222","#444","#666","#888","#aaa","#ccc","#ddd","#eee","#ddd","#ccc","#aaa","#888","#666","#444","#222","#000"].map((c,i) => (
+                <div key={i} className="flex-1" style={{ backgroundColor: c }} />
+              ))}
+            </div>
+
+            {/* Micro metadata */}
+            <div className="flex items-center justify-between mb-1 px-1">
+              <span className="font-mono-ui text-[7px] text-neutral-400 uppercase tracking-widest">Sheet 1/1</span>
+              <span className="font-mono-ui text-[7px] text-neutral-400 uppercase tracking-widest">Demand Curve — Growth Newsletter — Vol. VII · Edition 247</span>
+              <span className="font-mono-ui text-[7px] text-neutral-400 uppercase tracking-widest">Proof: Final</span>
+            </div>
+
+            {/* Main container with grid bg + corner caps */}
+            <div className="relative border border-black/15 overflow-hidden">
+
+              {/* Bold corner caps */}
+              <div className="absolute -top-[2px] -left-[2px] w-6 h-6 border-t-[3px] border-l-[3px] border-black z-10" />
+              <div className="absolute -top-[2px] -right-[2px] w-6 h-6 border-t-[3px] border-r-[3px] border-black z-10" />
+              <div className="absolute -bottom-[2px] -left-[2px] w-6 h-6 border-b-[3px] border-l-[3px] border-black z-10" />
+              <div className="absolute -bottom-[2px] -right-[2px] w-6 h-6 border-b-[3px] border-r-[3px] border-black z-10" />
+              {/* Mid-edge marks */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3 h-3 border-t-2 border-black z-10" />
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3 h-3 border-b-2 border-black z-10" />
+
+              <div className="relative z-[5]" style={{
+                background: `linear-gradient(135deg,
+                  hsla(calc(var(--rainbow-hue, 0) + 0), 70%, 97%, 0.35) 0%,
+                  hsla(calc(var(--rainbow-hue, 0) + 30), 60%, 96%, 0.35) 25%,
+                  hsla(calc(var(--rainbow-hue, 0) + 60), 65%, 97%, 0.35) 50%,
+                  hsla(calc(var(--rainbow-hue, 0) + 90), 55%, 96%, 0.35) 75%,
+                  hsla(calc(var(--rainbow-hue, 0) + 120), 70%, 97%, 0.35) 100%)`,
+              }}>
+                {/* Ornamental top rule */}
+                <div className="flex items-center gap-2 px-6 pt-6 mb-4">
+                  <div className="flex-1 h-px bg-black/80" />
+                  <div className="w-1.5 h-1.5 border border-black rotate-45" />
+                  <div className="w-1.5 h-1.5 bg-black rotate-45" />
+                  <div className="w-1.5 h-1.5 border border-black rotate-45" />
+                  <div className="flex-1 h-px bg-black/80" />
+                </div>
+
+                {/* Masthead */}
+                <div className="text-center px-6 pb-4">
+                  <div className="flex items-center justify-center gap-4 mb-2">
+                    <span className="font-mono-ui text-[8px] uppercase tracking-[0.4em] text-neutral-400">Est. 2020</span>
+                    <span className="text-[8px] text-neutral-300">✦</span>
+                    <span className="font-mono-ui text-[8px] uppercase tracking-[0.4em] text-neutral-400">Published Weekly</span>
+                    <span className="text-[8px] text-neutral-300">✦</span>
+                    <span className="font-mono-ui text-[8px] uppercase tracking-[0.4em] text-neutral-400">100,000+ Readers</span>
+                  </div>
+                  <h2 className="font-heading text-5xl md:text-7xl tracking-tight">The Growth Newsletter</h2>
+                </div>
+
+                {/* Ornamental mid rule */}
+                <div className="flex items-center gap-3 px-6 mb-4">
+                  <div className="flex-1 border-t border-black/30" />
+                  <span className="text-[9px] text-neutral-400">✦</span>
+                  <div className="flex-1 border-t border-black/30" />
+                </div>
+
+                {/* Marquee ticker */}
+                <div className="border-t border-b border-black/10 py-2 overflow-hidden mb-0">
+                  <div className="marquee-content whitespace-nowrap font-mono-ui text-[9px] uppercase tracking-widest text-neutral-500">
+                    {[0, 1].map((rep) => (
+                      <span key={rep} className="flex">
+                        {recentNewsletters.map((item, j) => (
+                          <span key={`${rep}-${j}`} className="contents">
+                            <span className="px-5 flex items-center gap-2">
+                              <span className="marquee-square" style={{ animationDelay: `${j * 0.5}s` }} />
+                              Edition {item.number} — {item.title}
+                            </span>
+                            |
+                          </span>
+                        ))}
+                      </span>
                     ))}
                   </div>
                 </div>
-              </div>
 
-              {/* Right column — testimonial */}
-              <div className="flex-shrink-0 md:w-[340px] lg:w-[400px] md:pl-12 pt-12 md:pt-0 flex flex-col justify-center">
-                <p className="text-lg font-light text-neutral-600 leading-relaxed italic">
-                  &ldquo;This is the only newsletter I actually read every single time it hits my inbox. No fluff — just real tactics I can use that week.&rdquo;
-                </p>
-                <div className="font-mono-ui text-xs text-neutral-400 mt-4">
-                  — VP of Marketing, Series A SaaS
+                {/* Three-column layout */}
+                <div className="grid md:grid-cols-5 divide-x divide-black/10">
+                  {/* Lead article — 3 cols */}
+                  <div className="md:col-span-3 p-6 md:p-8">
+                    <div className="section-tag mb-3" style={{ display: "inline-flex" }}>Most Recent Edition</div>
+                    <h3 className="font-heading text-2xl md:text-3xl tracking-tight mb-3">{recentNewsletters[0].title}</h3>
+                    <p className="text-sm text-neutral-600 font-light leading-relaxed mb-6">Growth experiments should be your most powerful tool. But most teams run them wrong — optimizing for velocity over learning, testing the wrong variables, and declaring winners based on hope.</p>
+
+                    {/* Sub-editions in classified style */}
+                    <div className="border-t-2 border-b border-black/80 py-1 mb-4">
+                      <div className="border-b border-black/30" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      {recentNewsletters.slice(1, 3).map((item, i) => (
+                        <div key={i} className="border border-black/10 p-3">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-mono-ui text-[9px] text-neutral-400">{item.number}</span>
+                            <span className="w-1 h-1 bg-neutral-300 rounded-full" />
+                            <span className="font-mono-ui text-[9px] text-neutral-400 uppercase">{item.type}</span>
+                          </div>
+                          <div className="text-sm font-medium leading-snug">{item.title}</div>
+                          <div className="font-mono-ui text-[9px] text-neutral-400 mt-1">{item.readTime} read</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* More editions in dense list */}
+                    <div className="mt-4">
+                      {recentNewsletters.slice(3).map((item, i) => (
+                        <div key={i} className="flex items-center justify-between py-2 border-b border-black/10 last:border-b-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono-ui text-[9px] text-neutral-400">{item.number}</span>
+                            <span className="text-sm font-medium">{item.title}</span>
+                          </div>
+                          <span className="section-tag" style={{ display: "inline-flex", fontSize: 8, padding: "1px 6px" }}>{item.type}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Subscribe sidebar — 2 cols */}
+                  <div className="md:col-span-2 p-6">
+                    <h3 className="font-heading text-xl tracking-tight mb-2">Never miss an edition</h3>
+                    <p className="text-sm text-neutral-500 font-light leading-relaxed mb-6">Growth systems, tactics, and insights. Delivered straight from the frontier every Tuesday.</p>
+                    <div className="space-y-3 mb-4">
+                      <input type="email" placeholder="your@email.com" className="w-full border border-black/15 rounded-sm px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-black/20 placeholder:text-neutral-400" />
+                      <button className="w-full bg-black text-white py-2.5 rounded-sm hover:bg-neutral-800 transition-colors text-sm font-medium">Subscribe — Free</button>
+                    </div>
+                    <p className="text-[10px] text-neutral-400 mb-6">No spam. Unsubscribe anytime.</p>
+
+                    {/* Stats */}
+                    <div className="border-t border-black/10 pt-4 space-y-3">
+                      {newsletterStats.map((s) => (
+                        <div key={s.label} className="flex items-center justify-between">
+                          <span className="font-mono-ui text-[10px] text-neutral-400 uppercase tracking-widest">{s.label}</span>
+                          <span className="font-heading text-lg">{s.value}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Testimonial */}
+                    <div className="mt-6 pt-4 border-t border-black/10">
+                      <p className="text-xs font-light text-neutral-500 leading-relaxed italic">&ldquo;This is the only newsletter I actually read every single time it hits my inbox. No fluff — just real tactics I can use that week.&rdquo;</p>
+                      <div className="font-mono-ui text-[9px] text-neutral-400 mt-2">— VP of Marketing, Series A SaaS</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ornamental bottom rule */}
+                <div className="flex items-center gap-2 px-6 pb-5 pt-2">
+                  <div className="flex-1 h-px bg-black/80" />
+                  <div className="w-1.5 h-1.5 border border-black rotate-45" />
+                  <div className="w-1.5 h-1.5 bg-black rotate-45" />
+                  <div className="w-1.5 h-1.5 border border-black rotate-45" />
+                  <div className="flex-1 h-px bg-black/80" />
                 </div>
               </div>
+            </div>
+
+            {/* Micro metadata bottom */}
+            <div className="flex items-center justify-between mt-1 px-1">
+              <span className="font-mono-ui text-[7px] text-neutral-400 uppercase tracking-widest">Trim line</span>
+              <span className="font-mono-ui text-[7px] text-neutral-400 uppercase tracking-widest">© Demand Curve 2026 · All rights reserved</span>
+              <span className="font-mono-ui text-[7px] text-neutral-400 uppercase tracking-widest">Bleed: 3mm</span>
+            </div>
+
+            {/* Color bar — bottom */}
+            <div className="flex h-1.5 mt-1">
+              {["#000","#222","#444","#666","#888","#aaa","#ccc","#ddd","#eee","#ddd","#ccc","#aaa","#888","#666","#444","#222","#000"].map((c,i) => (
+                <div key={i} className="flex-1" style={{ backgroundColor: c }} />
+              ))}
             </div>
           </div>
         </section>

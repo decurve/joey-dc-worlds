@@ -149,7 +149,7 @@ function SidebarDropdown({
   items,
   onItemClick,
 }: {
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string }>;
   label: string;
   items: { name: string; active?: boolean; onClick?: () => void }[];
   onItemClick?: (name: string) => void;
@@ -213,7 +213,7 @@ export default function FrontierPage() {
 
   const navItem = (
     view: ViewId,
-    icon: React.ElementType,
+    icon: React.ComponentType<{ className?: string }>,
     label: string,
     badge?: string
   ) => {
