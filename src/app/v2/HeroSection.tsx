@@ -12,6 +12,8 @@ import { useRef, useState, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { ArrowRight, Building2, Users, Crown, Clock, Rocket } from "lucide-react";
 import gsap from "gsap";
+import { useHeroVisual } from "./HeroVisualContext";
+import { heroVisuals } from "./HeroVisuals";
 
 const UnicornScene = dynamic(() => import("unicornstudio-react/next"), { ssr: false });
 
@@ -19,7 +21,7 @@ const UnicornScene = dynamic(() => import("unicornstudio-react/next"), { ssr: fa
 const COLUMNS = 7;
 const GAP = 16;
 const SIDE_PADDING = 24;
-const MAX_WIDTH = 1380;
+const MAX_WIDTH = 9999; // fluid — container edges are the boundary
 const DESKTOP_BREAKPOINT = 1024;
 
 const marqueeItems = [
@@ -196,13 +198,15 @@ export default function HeroSection() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [cellSize, setCellSize] = useState(0);
   const [containerWidth, setContainerWidth] = useState(0);
+  const { visualId } = useHeroVisual();
 
   const recalc = useCallback(() => {
     if (!containerRef.current) return;
     const rawW = containerRef.current.offsetWidth;
     setContainerWidth(rawW);
-    // Cell size — always from maxWidth, same as GridOverlay, so staircase aligns
-    const innerWidth = MAX_WIDTH - SIDE_PADDING * 2;
+    // Cell size — from actual width (capped at maxWidth), so staircase scales on small screens
+    const effectiveWidth = Math.min(rawW, MAX_WIDTH);
+    const innerWidth = effectiveWidth - SIDE_PADDING * 2;
     const cs = (innerWidth - (COLUMNS - 1) * GAP) / COLUMNS;
     setCellSize(Math.max(cs, 40));
   }, []);
@@ -313,7 +317,7 @@ export default function HeroSection() {
 
   /* ─── Desktop layout ─── */
   return (
-    <div ref={containerRef} className="relative flex flex-col h-screen max-h-[1080px] border-b border-black/10">
+    <div ref={containerRef} className="relative flex flex-col border-b border-black/10" style={{ height: "calc(100vh + 40px)", maxHeight: 1120 }}>
       {/* Main hero content area — fills viewport minus marquee */}
       <div className="relative flex-1 overflow-hidden">
 
@@ -332,46 +336,61 @@ export default function HeroSection() {
                 background: `hsl(var(--rainbow-hue, 0), 60%, 45%)`,
               }}
             >
-              {/* Unicorn Studio scene — oversized so interactive parts don't clip */}
-              <div style={{ position: "absolute", top: "-15%", left: "-15%", width: "145%", height: "150%" }}>
-                <UnicornScene
-                  projectId={US_PROJECT_ID_NEW}
-                  sdkUrl={US_SDK_URL}
-                  width="100%"
-                  height="100%"
-                  scale={1}
-                  dpi={1.5}
-                  fps={60}
-                  lazyLoad={false}
-                />
-              </div>
-              {/* Rainbow color overlay */}
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: `hsl(var(--rainbow-hue, 0), 60%, 45%)`,
-                  mixBlendMode: "multiply",
-                  opacity: 0.6,
-                }}
-              />
-              {/* Grayscale noise */}
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 1024 1024' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.5' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-                  backgroundSize: "512px 512px",
-                  opacity: 0.35,
-                  mixBlendMode: "multiply",
-                }}
-              />
-              {/* CRT scanlines */}
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.12) 2px, rgba(0,0,0,0.12) 3px)",
-                  opacity: 0.5,
-                }}
-              />
+              {/* Hero visual — either Unicorn Studio or canvas-based visual */}
+              {visualId === "original" ? (
+                <>
+                  {/* Unicorn Studio scene — oversized so interactive parts don't clip */}
+                  <div style={{ position: "absolute", top: "-15%", left: "-15%", width: "145%", height: "150%" }}>
+                    <UnicornScene
+                      projectId={US_PROJECT_ID_NEW}
+                      sdkUrl={US_SDK_URL}
+                      width="100%"
+                      height="100%"
+                      scale={1}
+                      dpi={1.5}
+                      fps={60}
+                      lazyLoad={false}
+                    />
+                  </div>
+                  {/* Rainbow color overlay */}
+                  <div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      background: `hsl(var(--rainbow-hue, 0), 60%, 45%)`,
+                      mixBlendMode: "multiply",
+                      opacity: 0.6,
+                    }}
+                  />
+                  {/* Grayscale noise — original only */}
+                  <div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 1024 1024' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.5' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+                      backgroundSize: "512px 512px",
+                      opacity: 0.35,
+                      mixBlendMode: "multiply",
+                    }}
+                  />
+                  {/* CRT scanlines — original only */}
+                  <div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.12) 2px, rgba(0,0,0,0.12) 3px)",
+                      opacity: 0.5,
+                    }}
+                  />
+                </>
+              ) : (
+                (() => {
+                  const match = heroVisuals.find((v) => v.id === visualId);
+                  const VisualComponent = match?.component;
+                  return VisualComponent ? (
+                    <div style={{ position: "relative", width: stairW, height: stairH }}>
+                      <VisualComponent width={stairW} height={stairH} />
+                    </div>
+                  ) : null;
+                })()
+              )}
             </div>
 
             {/* "Build real traction" label — bottom-right corner of staircase */}
@@ -394,11 +413,11 @@ export default function HeroSection() {
 
         {/* ── Left content — normal flexbox flow ── */}
         <div
-          className="relative z-[2] flex flex-col h-full"
+          className="relative z-[2] flex flex-col h-full pointer-events-none"
           style={{ paddingLeft: SIDE_PADDING + 8, paddingRight: SIDE_PADDING }}
         >
           {/* Top bar — DC label + credential tags at col 1 + clock */}
-          <div className="flex items-end pt-4 pb-2" style={{ minHeight: cellSize }}>
+          <div className="flex items-end pt-4 pb-2 pointer-events-auto" style={{ minHeight: cellSize }}>
             {/* DC label — sits in col 0 */}
             <div className="font-mono-ui text-[10px] text-neutral-400 uppercase tracking-widest leading-relaxed" style={{ width: cellSize }}>
               Demand Curve<br /><span className="text-neutral-300">& Growth Systems</span>
@@ -422,7 +441,7 @@ export default function HeroSection() {
           </div>
 
           {/* Headline */}
-          <div className="mt-10">
+          <div className="mt-10 pointer-events-auto">
             <h1
               className="font-heading leading-[0.92] tracking-tight"
               style={{ fontSize: `clamp(48px, 5.8vw, 80px)` }}
@@ -435,7 +454,7 @@ export default function HeroSection() {
           </div>
 
           {/* Subtext */}
-          <div className="mt-10" style={{ maxWidth: leftContentWidth || undefined }}>
+          <div className="mt-10 pointer-events-auto" style={{ maxWidth: leftContentWidth || undefined }}>
             <p className="text-sm lg:text-base font-light text-neutral-600 leading-relaxed">
               Growth isn&apos;t something you stumble into. It&apos;s something you engineer. We&apos;ve spent a decade proving it with 4,500+ startups.
             </p>
@@ -445,7 +464,7 @@ export default function HeroSection() {
           <div style={{ flex: "1 1 0" }} />
 
           {/* CTA */}
-          <div style={{ maxWidth: leftContentWidth || undefined }}>
+          <div className="pointer-events-auto" style={{ maxWidth: leftContentWidth || undefined }}>
             <div className="flex flex-wrap items-center gap-4">
               <GlowButton href="/v2/services">
                 Explore the Growth Studio <ArrowRight className="w-4 h-4" />
@@ -460,7 +479,7 @@ export default function HeroSection() {
           </div>
 
           {/* Service tags */}
-          <div className="mt-5" style={{ maxWidth: leftContentWidth || undefined }}>
+          <div className="mt-5 pointer-events-auto" style={{ maxWidth: leftContentWidth || undefined }}>
             <div className="flex flex-wrap gap-2">
               {serviceTags.map((tag) => (
                 <span
@@ -477,7 +496,7 @@ export default function HeroSection() {
           <div style={{ flex: "1 1 0" }} />
 
           {/* Stats — bottom of the hero, each aligned to its column */}
-          <div className="flex pb-4">
+          <div className="flex pb-4 pointer-events-auto">
             {stats.map((stat, i) => (
               <div key={stat.label} style={{ width: cellSize, marginRight: i < stats.length - 1 ? GAP : 0 }}>
                 <div className="font-heading text-4xl xl:text-5xl tracking-tight" style={{ marginBottom: 2 }}>{stat.value}</div>
@@ -489,10 +508,7 @@ export default function HeroSection() {
       </div>
 
       {/* Marquee — pinned to bottom of viewport */}
-      <div
-        className="border-t border-b border-black/10 py-3 overflow-hidden font-mono-ui text-xs tracking-widest uppercase text-neutral-500 rainbow-hover cursor-default bg-[#f9f9f8] relative z-10"
-        style={{ marginLeft: -SIDE_PADDING, marginRight: -SIDE_PADDING }}
-      >
+      <div className="border-t border-b border-black/10 py-3 overflow-hidden font-mono-ui text-xs tracking-widest uppercase text-neutral-500 rainbow-hover cursor-default bg-[#f9f9f8] relative z-10">
         <div className="marquee-content whitespace-nowrap">
           {[0, 1].map((i) => (
             <span key={i} className="flex">

@@ -39,9 +39,11 @@ export default function GridOverlay({
 
   const recalc = useCallback(() => {
     if (!containerRef.current) return;
-    // Always use maxWidth for cell sizing so squares never shrink
+    // Use actual width (capped at maxWidth) so grid scales on smaller screens
+    const w = containerRef.current.offsetWidth;
     const h = containerRef.current.offsetHeight;
-    const innerWidth = maxWidth - sidePadding * 2;
+    const effectiveWidth = Math.min(w, maxWidth);
+    const innerWidth = effectiveWidth - sidePadding * 2;
     const cs = (innerWidth - (columns - 1) * gapSize) / columns;
     setCellSize(Math.max(cs, 40));
     setContainerHeight(h);
@@ -74,28 +76,6 @@ export default function GridOverlay({
               position: "relative",
             }}
           >
-            {/* Edge lines — left and right edges of the grid */}
-            <div
-              style={{
-                position: "absolute",
-                left: sidePadding - gapSize,
-                top: 0,
-                bottom: 0,
-                width: 0,
-                borderLeft: `1px solid ${lineColor}`,
-              }}
-            />
-            <div
-              style={{
-                position: "absolute",
-                right: sidePadding - gapSize,
-                top: 0,
-                bottom: 0,
-                width: 0,
-                borderLeft: `1px solid ${lineColor}`,
-              }}
-            />
-
             {/* Grid cells */}
             <div
               style={{
