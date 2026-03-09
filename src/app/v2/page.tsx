@@ -6,6 +6,7 @@ import GridOverlay from "./GridOverlay";
 import HeroSection from "./HeroSection";
 import GrowthProgramWindow from "./GrowthProgramWindow";
 import { HeroVisualProvider } from "./HeroVisualContext";
+import MassiveTypeScroll from "./MassiveTypeScroll";
 
 export const metadata = {
   title: "Demand Curve — We Help Startups Build Growth Systems",
@@ -88,7 +89,7 @@ const newsletterStats = [
 export default function V2Page() {
   return (
     <HeroVisualProvider>
-    <div className="v2-world v2-bg text-[#1a1a1a] text-sm selection:bg-yellow-200 selection:text-black" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace", position: "relative", zIndex: 2 }}>
+    <div className="v2-world v2-bg text-[#1a1a1a] text-sm selection:bg-yellow-200 selection:text-black" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace", position: "relative", zIndex: 2, overflowX: "clip" }}>
       {/* ── Side borders + checkerboard (hex.tech style) ── */}
       {/* Single border line 16px from each viewport edge, checkerboard fills 0-16px strip */}
       <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 50 }}>
@@ -117,8 +118,27 @@ export default function V2Page() {
       {/* 1. NAVIGATION */}
       <V2Nav />
 
+      {/* Fixed DEMAND CURVE teaser — sits behind main content, peeks through after footer */}
+      <div
+        className="fixed bottom-0 left-0 right-0 flex items-center justify-center pointer-events-none"
+        style={{ zIndex: 1, paddingBottom: 48 }}
+      >
+        <span
+          style={{
+            fontFamily: "'PP Mondwest', monospace",
+            fontWeight: 700,
+            fontSize: `clamp(36px, 4.5vw, 58px)`,
+            letterSpacing: "-0.01em",
+            color: "#000",
+          }}
+        >
+          DEMAND CURVE
+        </span>
+      </div>
+
       {/* Main content — everything lives inside the 16px side borders */}
-      <div className="relative" style={{ margin: "0 17px" }}>
+      {/* z-index: 3 so it sits ABOVE the fixed teaser. v2-bg so it has its own background to cover the teaser. */}
+      <div className="relative v2-bg" style={{ margin: "0 17px", zIndex: 3 }}>
 
         {/* 2. HERO — grid-aligned hero with staircase image */}
         <div className="relative" style={{ marginTop: -40 }}>
@@ -127,8 +147,8 @@ export default function V2Page() {
           </GridOverlay>
         </div>
 
-        {/* Fading lines under marquee */}
-        <div className="relative" style={{ height: 60, minHeight: 40 }}>
+        {/* Fading lines under marquee — full viewport width */}
+        <div className="relative" style={{ height: 60, minHeight: 40, width: "100vw", marginLeft: "calc(-50vw + 50%)" }}>
           {[
             { y: 0, opacity: 0.10 },
             { y: 3, opacity: 0.09 },
@@ -152,6 +172,7 @@ export default function V2Page() {
             />
           ))}
         </div>
+        <div style={{ height: 40 }} />
 
         {/* Padded content below hero */}
         <div className="px-6">
@@ -160,12 +181,11 @@ export default function V2Page() {
         <section className="py-20 md:py-28">
           {/* Grid frame — edge-only squares with corner caps. 50px cells, 1300×800 = 26×16 perfect grid */}
           <div
-            className="relative mx-auto max-w-[1300px]"
-            style={{ height: 800 }}
+            className="relative mx-auto max-w-[1300px] min-h-[500px] md:min-h-[800px]"
           >
-            {/* Grid pattern — masked to show only the 1-cell-thick border frame */}
+            {/* Grid pattern — masked to show only the 1-cell-thick border frame. Hidden on small screens. */}
             <div
-              className="absolute inset-0 pointer-events-none border-r border-b border-black/[0.08]"
+              className="absolute inset-0 pointer-events-none border-r border-b border-black/[0.08] hidden md:block"
               style={{
                 backgroundImage: "linear-gradient(to right, rgba(0,0,0,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.08) 1px, transparent 1px)",
                 backgroundSize: "50px 50px",
@@ -176,9 +196,9 @@ export default function V2Page() {
               }}
             />
 
-            {/* Noise fill inside the edge squares — same mask as grid */}
+            {/* Noise fill inside the edge squares — hidden on small screens */}
             <div
-              className="absolute inset-0 pointer-events-none"
+              className="absolute inset-0 pointer-events-none hidden md:block"
               style={{
                 backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 1024 1024' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.5' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
                 backgroundSize: "512px 512px",
@@ -191,15 +211,15 @@ export default function V2Page() {
               }}
             />
 
-            {/* Corner marks — black L-shaped caps at each corner */}
-            <div className="absolute -top-px -left-px w-4 h-4 border-t-2 border-l-2 border-black" />
-            <div className="absolute -top-px -right-px w-4 h-4 border-t-2 border-r-2 border-black" />
-            <div className="absolute -bottom-px -left-px w-4 h-4 border-b-2 border-l-2 border-black" />
-            <div className="absolute -bottom-px -right-px w-4 h-4 border-b-2 border-r-2 border-black" />
+            {/* Corner marks — hidden on small screens */}
+            <div className="absolute -top-px -left-px w-4 h-4 border-t-2 border-l-2 border-black hidden md:block" />
+            <div className="absolute -top-px -right-px w-4 h-4 border-t-2 border-r-2 border-black hidden md:block" />
+            <div className="absolute -bottom-px -left-px w-4 h-4 border-b-2 border-l-2 border-black hidden md:block" />
+            <div className="absolute -bottom-px -right-px w-4 h-4 border-b-2 border-r-2 border-black hidden md:block" />
 
             {/* Content — centered vertically */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="px-8 md:px-16 py-16 text-center">
+            <div className="flex items-center justify-center min-h-[500px] md:min-h-[800px]">
+              <div className="px-6 md:px-16 py-12 md:py-16 text-center">
               <div className="section-tag mb-8">What We Believe</div>
               <h2 className="font-heading text-5xl md:text-7xl lg:text-8xl tracking-tight mb-6">
                 Built on{" "}
@@ -241,8 +261,8 @@ export default function V2Page() {
                 <p className="text-neutral-500 font-light text-base mb-8">
                   {studioSubtitle}
                 </p>
-                <a href="/v2/services" className="glow-btn relative px-6 py-3 rounded-md font-medium text-sm inline-flex items-center gap-2 overflow-hidden">
-                  <span className="relative z-10 flex items-center gap-2">View all programs <ArrowRight className="w-4 h-4" /></span>
+                <a href="/v2/services" className="rainbow-hover inline-flex items-center gap-2 text-sm font-semibold hover:text-black transition-colors">
+                  View all programs <ArrowRight className="w-4 h-4" />
                 </a>
               </div>
             </div>
@@ -260,9 +280,9 @@ export default function V2Page() {
                   </div>
                   <h3 className="font-heading text-2xl md:text-3xl font-medium mb-3">{program.name}</h3>
                   <p className="text-neutral-600 font-light leading-relaxed mb-6">{program.description}</p>
-                  <button className="border border-black/20 rounded-full px-5 py-2 text-sm font-medium group-hover:bg-black group-hover:text-white transition-colors">
-                    {program.cta}
-                  </button>
+                  <span className="inline-flex items-center gap-2 text-sm font-medium text-neutral-500 group-hover:text-black transition-colors">
+                    {program.cta} <ArrowRight className="w-3.5 h-3.5" />
+                  </span>
                 </div>
               ))}
 
@@ -300,9 +320,12 @@ export default function V2Page() {
           <GrowthProgramWindow />
         </section>
 
-        {/* 7. SOCIAL PROOF */}
+        {/* 7. SOCIAL PROOF — close px-6 wrapper, break out to full viewport */}
+        </div>{/* end px-6 */}
+        </div>{/* end margin:0 17px wrapper */}
+        <div className="v2-bg relative" style={{ zIndex: 3 }}>
         <div style={{ height: 48 }} />
-        <section className="v2-bg border-y border-black/10 py-16 md:py-20 relative z-[3]">
+        <section className="border-y border-black/10 py-16 md:py-20 relative">
         {/* Inner horizontal lines — 16px inset from top and bottom borders */}
         <div className="absolute left-0 right-0 pointer-events-none" style={{ top: 16, height: 1, backgroundColor: "rgba(0,0,0,0.06)" }} />
         <div className="absolute left-0 right-0 pointer-events-none" style={{ bottom: 16, height: 1, backgroundColor: "rgba(0,0,0,0.06)" }} />
@@ -363,38 +386,15 @@ export default function V2Page() {
           </div>
         </div>
       </section>
+        </div>{/* end v2-bg wrapper around social proof */}
+
+        {/* Reopen wrappers after social proof */}
+        <div className="relative v2-bg" style={{ margin: "0 17px", zIndex: 3 }}>
+        <div className="px-6">
 
         {/* 8. NEWSLETTER SIGNUP — V32 Broadsheet */}
         <section id="newsletter" className="py-20 md:py-28">
-          <div className="relative mx-auto max-w-6xl px-6">
-            {/* Crop/registration marks */}
-            <div className="absolute -top-5 -left-5 w-8 h-8">
-              <div className="absolute top-0 left-3.5 w-px h-5 bg-black/30" />
-              <div className="absolute top-3.5 left-0 w-5 h-px bg-black/30" />
-              <div className="absolute top-2.5 left-2.5 w-2.5 h-2.5 rounded-full border border-black/25" />
-            </div>
-            <div className="absolute -top-5 -right-5 w-8 h-8">
-              <div className="absolute top-0 right-3.5 w-px h-5 bg-black/30" />
-              <div className="absolute top-3.5 right-0 w-5 h-px bg-black/30" />
-              <div className="absolute top-2.5 right-2.5 w-2.5 h-2.5 rounded-full border border-black/25" />
-            </div>
-            <div className="absolute -bottom-5 -left-5 w-8 h-8">
-              <div className="absolute bottom-0 left-3.5 w-px h-5 bg-black/30" />
-              <div className="absolute bottom-3.5 left-0 w-5 h-px bg-black/30" />
-              <div className="absolute bottom-2.5 left-2.5 w-2.5 h-2.5 rounded-full border border-black/25" />
-            </div>
-            <div className="absolute -bottom-5 -right-5 w-8 h-8">
-              <div className="absolute bottom-0 right-3.5 w-px h-5 bg-black/30" />
-              <div className="absolute bottom-3.5 right-0 w-5 h-px bg-black/30" />
-              <div className="absolute bottom-2.5 right-2.5 w-2.5 h-2.5 rounded-full border border-black/25" />
-            </div>
-
-            {/* Color bar — top */}
-            <div className="flex h-1.5 mb-1">
-              {["#000","#222","#444","#666","#888","#aaa","#ccc","#ddd","#eee","#ddd","#ccc","#aaa","#888","#666","#444","#222","#000"].map((c,i) => (
-                <div key={i} className="flex-1" style={{ backgroundColor: c }} />
-              ))}
-            </div>
+          <div className="relative mx-auto max-w-[1300px]">
 
             {/* Micro metadata */}
             <div className="flex items-center justify-between mb-1 px-1">
@@ -556,14 +556,35 @@ export default function V2Page() {
               <span className="font-mono-ui text-[7px] text-neutral-400 uppercase tracking-widest">Bleed: 3mm</span>
             </div>
 
-            {/* Color bar — bottom */}
-            <div className="flex h-1.5 mt-1">
-              {["#000","#222","#444","#666","#888","#aaa","#ccc","#ddd","#eee","#ddd","#ccc","#aaa","#888","#666","#444","#222","#000"].map((c,i) => (
-                <div key={i} className="flex-1" style={{ backgroundColor: c }} />
-              ))}
-            </div>
           </div>
         </section>
+
+        {/* Fading lines between newsletter and pre-footer — full viewport width */}
+        <div className="relative" style={{ height: 60, minHeight: 40, width: "100vw", marginLeft: "calc(-50vw + 50%)" }}>
+          {[
+            { y: 0, opacity: 0.10 },
+            { y: 3, opacity: 0.09 },
+            { y: 7, opacity: 0.08 },
+            { y: 12, opacity: 0.07 },
+            { y: 18, opacity: 0.06 },
+            { y: 25, opacity: 0.05 },
+            { y: 33, opacity: 0.04 },
+            { y: 42, opacity: 0.03 },
+            { y: 52, opacity: 0.02 },
+            { y: 59, opacity: 0.01 },
+          ].map((line, i) => (
+            <div
+              key={i}
+              className="absolute left-0 right-0"
+              style={{
+                top: line.y,
+                height: 1,
+                backgroundColor: `rgba(0,0,0,${line.opacity})`,
+              }}
+            />
+          ))}
+        </div>
+        <div style={{ height: 40 }} />
 
         {/* 9. PRE-FOOTER */}
         <section className="grid grid-cols-1 md:grid-cols-2 min-h-[400px]">
@@ -574,12 +595,12 @@ export default function V2Page() {
                 Whether you want us to build your growth system or you want to build it yourself — we&apos;ve got you covered.
               </h3>
             </div>
-            <div className="mt-12 flex flex-col sm:flex-row gap-3">
-              <a href="/v2/services" className="glow-btn relative px-8 py-3 rounded-md text-sm font-medium overflow-hidden inline-flex items-center justify-center">
+            <div className="mt-12 flex items-center gap-6">
+              <a href="/v2/services" className="glow-btn relative px-6 py-2.5 rounded-md text-sm font-medium overflow-hidden inline-flex items-center justify-center shrink-0">
                 <span className="relative z-10">Talk to the Growth Studio</span>
               </a>
-              <a href="/v2/growth-program" className="glow-btn relative px-8 py-3 rounded-md text-sm font-medium overflow-hidden inline-flex items-center justify-center">
-                <span className="relative z-10">Explore the Growth Program</span>
+              <a href="/v2/growth-program" className="inline-flex items-center gap-1.5 text-sm font-medium text-neutral-500 hover:text-black transition-colors rainbow-hover shrink-0">
+                Explore the Growth Program <ArrowRight className="w-3.5 h-3.5" />
               </a>
             </div>
           </div>
@@ -612,7 +633,7 @@ export default function V2Page() {
           </div>
         </section>
 
-        {/* 10. FOOTER — small links (inside container, barrier lines stop here) */}
+        {/* 10. FOOTER — small links */}
         <footer className="border-t border-black/10 pt-8 pb-4">
           <div className="flex justify-between items-end mb-8 font-mono-ui text-xs text-neutral-500 uppercase">
             <div className="flex items-center gap-4">
@@ -632,11 +653,10 @@ export default function V2Page() {
         </div>{/* end padded content */}
       </div>{/* end main content container */}
 
-      {/* Massive Type Footer */}
-      <div className="w-full overflow-hidden pb-4 px-4">
-        <h1 className="font-mondwest architects-text w-full text-center tracking-tighter select-none rainbow-text-hover cursor-default">
-          DEMAND CURVE
-        </h1>
+      {/* Massive Type Footer — pulled up so animation starts while footer is still visible */}
+      {/* Canvas z-index:2 sits behind main content z-index:3, revealed as footer scrolls away */}
+      <div style={{ marginTop: -900 }}>
+        <MassiveTypeScroll />
       </div>
     </div>
     </HeroVisualProvider>
