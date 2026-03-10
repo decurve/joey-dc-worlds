@@ -316,7 +316,7 @@ export default function GrowthProgramWindow() {
           className="flex items-center border-b border-black/10 px-6 py-5 group program-row-hover cursor-pointer transition-colors"
         >
           <div className="w-28 shrink-0 text-xs font-mono-ui flex items-center gap-2.5">
-            <div className="w-2 h-2 bg-black shrink-0" />
+            <span className="gp-square" style={{ animationDelay: `${i * 0.4}s` }} />
             {item.path}
           </div>
           <div className="flex-1 text-xl md:text-2xl font-medium leading-tight">

@@ -478,12 +478,16 @@ html {
   );
 }
 
-/* ─── Marquee Filling Square ─── */
-@keyframes square-fill {
-  0%   { box-shadow: inset 0 0 0 0px currentColor; }
-  40%  { box-shadow: inset 0 0 0 1.5px currentColor; }
-  70%  { box-shadow: inset 0 0 0 3px currentColor; }
-  100% { box-shadow: inset 0 0 0 5px currentColor; }
+/* ─── Marquee Cycling Square (Revelo-style stepped fill) ─── */
+@keyframes square-step-fill {
+  0%    { box-shadow: inset 0 0 0 0px currentColor; background: transparent; }
+  14%   { box-shadow: inset 0 0 0 1px currentColor; background: transparent; }
+  28%   { box-shadow: inset 0 0 0 1.5px currentColor; background: transparent; }
+  42%   { box-shadow: inset 0 0 0 2px currentColor; background: transparent; }
+  57%   { box-shadow: inset 0 0 0 3px currentColor; background: transparent; }
+  71%   { box-shadow: inset 0 0 0 4px currentColor; background: currentColor; }
+  85%   { box-shadow: none; background: currentColor; }
+  100%  { box-shadow: inset 0 0 0 0px currentColor; background: transparent; }
 }
 .marquee-square {
   display: inline-block;
@@ -491,7 +495,36 @@ html {
   height: 8px;
   border: 1px solid currentColor;
   flex-shrink: 0;
-  animation: square-fill 2.5s ease-in-out infinite alternate;
+  animation: square-step-fill 2.4s steps(7) infinite;
+}
+
+/* ─── Growth Program path square cycling ─── */
+.gp-square {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border: 1px solid currentColor;
+  flex-shrink: 0;
+  animation: square-step-fill 3s steps(7) infinite;
+}
+
+/* ─── Newsletter diamond cycling ─── */
+@keyframes diamond-cycle {
+  0%    { content: "◇"; }
+  20%   { content: "◈"; }
+  40%   { content: "◆"; }
+  60%   { content: "◈"; }
+  80%   { content: "◇"; }
+  100%  { content: "◇"; }
+}
+.diamond-cycle {
+  display: inline-block;
+  font-size: 8px;
+  line-height: 1;
+}
+.diamond-cycle::before {
+  content: "◇";
+  animation: diamond-cycle 2s steps(5) infinite;
 }
 
 /* ─── Film Grain Overlay (kept for staircase CRT reference) ─── */

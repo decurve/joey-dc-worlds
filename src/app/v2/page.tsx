@@ -427,7 +427,7 @@ export default function V2Page() {
                 <div className="flex items-center gap-2 px-6 pt-6 mb-4">
                   <div className="flex-1 h-px bg-black/80" />
                   <div className="w-1.5 h-1.5 border border-black rotate-45" />
-                  <div className="w-1.5 h-1.5 bg-black rotate-45" />
+                  <span className="diamond-cycle" />
                   <div className="w-1.5 h-1.5 border border-black rotate-45" />
                   <div className="flex-1 h-px bg-black/80" />
                 </div>
@@ -542,7 +542,7 @@ export default function V2Page() {
                 <div className="flex items-center gap-2 px-6 pb-5 pt-2">
                   <div className="flex-1 h-px bg-black/80" />
                   <div className="w-1.5 h-1.5 border border-black rotate-45" />
-                  <div className="w-1.5 h-1.5 bg-black rotate-45" />
+                  <span className="diamond-cycle" />
                   <div className="w-1.5 h-1.5 border border-black rotate-45" />
                   <div className="flex-1 h-px bg-black/80" />
                 </div>
