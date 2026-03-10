@@ -442,14 +442,16 @@ function RocketLabel3D({
   position,
   text,
   side = "right",
+  opacity = 1,
 }: {
   position: [number, number, number];
   text: string;
   side?: "left" | "right";
+  opacity?: number;
 }) {
   const isLeft = side === "left";
   return (
-    <Html position={position} center={false} style={{ pointerEvents: "none" }}>
+    <Html position={position} center={false} style={{ pointerEvents: "none", opacity, transition: "opacity 0.3s" }}>
       <div
         style={{
           display: "flex",
@@ -468,28 +470,37 @@ function RocketLabel3D({
 }
 
 /* ─── Rotating 3D labels that appear only during rocket phase ─── */
-function RocketLabels({ visible }: { visible: boolean }) {
+function RocketLabels({ visible, phaseTimeRef }: { visible: boolean; phaseTimeRef: React.MutableRefObject<number> }) {
   const groupRef = useRef<THREE.Group>(null);
+  const [opacity, setOpacity] = useState(1);
 
   useFrame((state) => {
     if (!groupRef.current) return;
     const time = state.clock.getElapsedTime();
     const angle = time * 0.4 + Math.PI / 4;
     groupRef.current.rotation.y = angle;
+
+    // Fade out labels after 60% of the rocket phase
+    const rocketDur = PHASE_DURS[0];
+    const pt = phaseTimeRef.current;
+    const fadeStart = rocketDur * 0.55;
+    const fadeDur = rocketDur * 0.15;
+    const newOpacity = visible ? Math.max(0, Math.min(1, 1 - (pt - fadeStart) / fadeDur)) : 0;
+    setOpacity(newOpacity);
   });
 
-  if (!visible) return null;
+  if (!visible || opacity <= 0) return null;
 
   const s = ROCKET_SCALE;
   const ys = 1.35; // match yStretch
   const yOff = 5; // match Y offset
   return (
     <group ref={groupRef} position={[0, yOff, 0]}>
-      <RocketLabel3D position={[8 * s, 15 * s * ys, 0]} text="GROWTH ENGINE" side="right" />
-      <RocketLabel3D position={[-8 * s, -20 * s * ys, 0]} text="ACQUISITION" side="left" />
-      <RocketLabel3D position={[8 * s, -5 * s * ys, 0]} text="RETENTION" side="right" />
-      <RocketLabel3D position={[-8 * s, 5 * s * ys, 0]} text="STORY SYSTEM" side="left" />
-      <RocketLabel3D position={[15 * s, -15 * s * ys, 0]} text="FLYWHEEL" side="right" />
+      <RocketLabel3D position={[8 * s, 15 * s * ys, 0]} text="GROWTH ENGINE" side="right" opacity={opacity} />
+      <RocketLabel3D position={[-8 * s, -20 * s * ys, 0]} text="ACQUISITION" side="left" opacity={opacity} />
+      <RocketLabel3D position={[8 * s, -5 * s * ys, 0]} text="RETENTION" side="right" opacity={opacity} />
+      <RocketLabel3D position={[-8 * s, 5 * s * ys, 0]} text="STORY SYSTEM" side="left" opacity={opacity} />
+      <RocketLabel3D position={[15 * s, -15 * s * ys, 0]} text="FLYWHEEL" side="right" opacity={opacity} />
     </group>
   );
 }
@@ -517,9 +528,11 @@ function MorphLabel({ phase }: { phase: number }) {
 function RocketMorphSwarm({
   onPhaseChange,
   phaseRef,
+  phaseTimeRef,
 }: {
   onPhaseChange: (p: number) => void;
   phaseRef: React.MutableRefObject<number>;
+  phaseTimeRef: React.MutableRefObject<number>;
 }) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const dummy = useMemo(() => new THREE.Object3D(), []);
@@ -575,6 +588,7 @@ function RocketMorphSwarm({
       phaseRef.current = pIdx;
       onPhaseChange(pIdx);
     }
+    phaseTimeRef.current = phaseT;
 
     const currentShapeFn = shapeFns[pIdx];
     const nextShapeFn = shapeFns[nIdx];
@@ -673,8 +687,8 @@ export default function RocketMorphScene({
 }) {
   const [currentPhase, setCurrentPhase] = useState(0);
   const phaseRef = useRef(0);
+  const phaseTimeRef = useRef(0);
 
-  // Show 3D labels only when in rocket phase (0) and not morphing out
   const isRocketPhase = currentPhase === 0;
 
   return (
@@ -690,8 +704,8 @@ export default function RocketMorphScene({
           height: "100%",
         }}
       >
-        <RocketMorphSwarm onPhaseChange={setCurrentPhase} phaseRef={phaseRef} />
-        <RocketLabels visible={isRocketPhase} />
+        <RocketMorphSwarm onPhaseChange={setCurrentPhase} phaseRef={phaseRef} phaseTimeRef={phaseTimeRef} />
+        <RocketLabels visible={isRocketPhase} phaseTimeRef={phaseTimeRef} />
         <OrbitControls
           enableRotate={false}
           enableZoom={false}
