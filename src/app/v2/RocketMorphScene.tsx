@@ -392,6 +392,7 @@ const labelStyle: React.CSSProperties = {
   border: "1px solid rgba(0,0,0,0.2)",
   background: "rgba(249,249,248,0.7)",
   backdropFilter: "blur(4px)",
+  borderRadius: 6,
   padding: "3px 8px",
   whiteSpace: "nowrap",
   pointerEvents: "none",
@@ -423,6 +424,7 @@ const titleStyle: React.CSSProperties = {
   border: "1px solid rgba(0,0,0,0.15)",
   background: "rgba(249,249,248,0.7)",
   backdropFilter: "blur(4px)",
+  borderRadius: 6,
   padding: "4px 10px",
   whiteSpace: "nowrap",
 };
