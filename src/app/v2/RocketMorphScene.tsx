@@ -453,7 +453,7 @@ function RocketLabel3D({
 }) {
   const isLeft = side === "left";
   return (
-    <Html position={position} center={false} style={{ pointerEvents: "none", opacity, transition: "opacity 0.3s" }}>
+    <Html position={position} center={false} style={{ pointerEvents: "none", opacity }}>
       <div
         style={{
           display: "flex",
@@ -474,8 +474,8 @@ function RocketLabel3D({
 /* ─── Rotating 3D labels that appear only during rocket phase ─── */
 function RocketLabels({ visible, phaseTimeRef }: { visible: boolean; phaseTimeRef: React.MutableRefObject<number> }) {
   const groupRef = useRef<THREE.Group>(null);
-  const [opacity, setOpacity] = useState(visible ? 1 : 0);
-  const prevVisible = useRef(visible);
+  const opacityRef = useRef(1);
+  const [, forceRender] = useState(0);
 
   useFrame((state) => {
     if (!groupRef.current) return;
@@ -483,22 +483,19 @@ function RocketLabels({ visible, phaseTimeRef }: { visible: boolean; phaseTimeRe
     const angle = time * 0.4 + Math.PI / 4;
     groupRef.current.rotation.y = angle;
 
-    // Reset opacity to 1 when rocket phase starts
-    if (visible && !prevVisible.current) {
-      setOpacity(1);
-    }
-    prevVisible.current = visible;
+    // Always compute from phaseTimeRef — it resets to 0 on each new rocket phase
+    const rocketDur = PHASE_DURS[0];
+    const pt = phaseTimeRef.current;
+    const fadeStart = rocketDur * 0.45;
+    const fadeDur = rocketDur * 0.25;
+    const newOp = visible ? Math.max(0, Math.min(1, 1 - (pt - fadeStart) / fadeDur)) : 0;
 
-    if (visible) {
-      const rocketDur = PHASE_DURS[0];
-      const pt = phaseTimeRef.current;
-      const fadeStart = rocketDur * 0.55;
-      const fadeDur = rocketDur * 0.15;
-      const newOp = Math.max(0, Math.min(1, 1 - (pt - fadeStart) / fadeDur));
-      setOpacity(newOp);
-    }
+    opacityRef.current = newOp;
+    // Re-render during fade so opacity updates smoothly in the DOM
+    forceRender((n) => n + 1);
   });
 
+  const opacity = opacityRef.current;
   if (!visible || opacity <= 0) return null;
 
   const s = ROCKET_SCALE;

@@ -417,11 +417,11 @@ export default function V2Page() {
 
               <div className="relative z-[5]" style={{
                 background: `linear-gradient(135deg,
-                  hsla(calc(var(--rainbow-hue, 0) + 0), 70%, 97%, 0.35) 0%,
-                  hsla(calc(var(--rainbow-hue, 0) + 30), 60%, 96%, 0.35) 25%,
-                  hsla(calc(var(--rainbow-hue, 0) + 60), 65%, 97%, 0.35) 50%,
-                  hsla(calc(var(--rainbow-hue, 0) + 90), 55%, 96%, 0.35) 75%,
-                  hsla(calc(var(--rainbow-hue, 0) + 120), 70%, 97%, 0.35) 100%)`,
+                  hsla(calc(var(--rainbow-hue, 0) + 0), 70%, 97%, 0.18) 0%,
+                  hsla(calc(var(--rainbow-hue, 0) + 30), 60%, 96%, 0.18) 25%,
+                  hsla(calc(var(--rainbow-hue, 0) + 60), 65%, 97%, 0.18) 50%,
+                  hsla(calc(var(--rainbow-hue, 0) + 90), 55%, 96%, 0.18) 75%,
+                  hsla(calc(var(--rainbow-hue, 0) + 120), 70%, 97%, 0.18) 100%)`,
               }}>
                 {/* Ornamental top rule */}
                 <div className="flex items-center gap-2 px-6 pt-6 mb-4">

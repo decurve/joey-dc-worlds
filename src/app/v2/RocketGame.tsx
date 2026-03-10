@@ -455,17 +455,17 @@ export default function RocketGame({ visible }: { visible: boolean }) {
       ctx.textAlign = "left";
       ctx.textBaseline = "top";
 
-      // Score
+      // Score (below nav)
       ctx.font = "bold 14px 'IBM Plex Mono', monospace";
       ctx.fillStyle = "rgba(0,0,0,0.6)";
-      ctx.fillText(`${g.score}`, 20, 20);
+      ctx.fillText(`${g.score}`, 20, 60);
 
       ctx.font = "9px 'IBM Plex Mono', monospace";
       ctx.fillStyle = "rgba(0,0,0,0.25)";
-      ctx.fillText("OBSTACLES CLEARED", 20, 38);
+      ctx.fillText("OBSTACLES CLEARED", 20, 78);
 
       // Active effects
-      let hudY = 58;
+      let hudY = 98;
       if (g.state.repaired) {
         ctx.fillStyle = "rgba(60,180,80,0.5)";
         ctx.fillText("● F5 FRAMEWORK — SMOOTHER FLIGHT", 20, hudY);
