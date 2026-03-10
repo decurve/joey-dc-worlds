@@ -312,137 +312,36 @@ function shapeInfinity(i: number, time: number): [number, number, number] {
   return [x, y, z];
 }
 
-// Phase 6: Fuse → explosion (growth catalyst)
-function shapeFuse(i: number, time: number): [number, number, number] {
+// Phase 6: Spiral (growth catalyst) — particles flowing outward from center
+function shapeSpiral(i: number, time: number): [number, number, number] {
   const norm = i / COUNT;
+  // 3 spiral arms, particles distributed along them and flowing outward
+  const NUM_ARMS = 3;
+  const armIdx = Math.floor(norm * NUM_ARMS);
+  const armT = (norm * NUM_ARMS) - armIdx;
 
-  // The fuse burns on a ~4s loop, then the dynamite explodes for ~2s
-  const cycleLen = 6.0;
-  const fuseTime = 3.5; // fuse burning duration
-  const explodeTime = cycleLen - fuseTime; // explosion duration
-  const t = time % cycleLen;
-  const isBurning = t < fuseTime;
-  const burnProgress = Math.min(t / fuseTime, 1.0); // 0→1 as fuse burns
-  const explodeProgress = isBurning ? 0 : (t - fuseTime) / explodeTime; // 0→1 during explosion
+  // Base angle for this arm
+  const armOffset = (armIdx / NUM_ARMS) * Math.PI * 2;
+  // How far along the spiral (0 = center, 1 = outer edge)
+  const flow = (armT + time * 0.15) % 1.0;
+  // Spiral radius grows with distance
+  const maxR = 14;
+  const r = flow * maxR;
+  // Total rotation: ~2.5 turns from center to edge + slow global spin
+  const angle = armOffset + flow * Math.PI * 5 + time * 0.5;
 
-  // Fuse path: a curvy line from right to left ending at the dynamite bundle
-  // Using a few control points for a nice S-curve
-  const fuseLen = 8; // number of segments
-  function fusePoint(s: number): [number, number] {
-    // s = 0 is the lit end (right), s = 1 is the dynamite (left)
-    const fx = 14 - s * 24; // right to left
-    const fy = Math.sin(s * Math.PI * 2.5) * 3 + 2; // wavy
-    return [fx, fy];
-  }
+  const x = Math.cos(angle) * r;
+  const y = Math.sin(angle) * r + 2;
+  const z = (hash(i) - 0.5) * 3;
 
-  // Dynamite bundle position
-  const dynamiteX = -10;
-  const dynamiteY = 2;
+  // Per-particle scatter for thickness
+  const jx = (hash(i + 100) - 0.5) * (1.0 + flow * 1.5);
+  const jy = (hash(i + 200) - 0.5) * (1.0 + flow * 1.5);
 
-  if (norm < 0.15) {
-    // Dynamite bundle — cluster of cylindrical sticks
-    const bundleNorm = norm / 0.15;
-    const stickIdx = Math.floor(bundleNorm * 5);
-    const stickT = (bundleNorm * 5) - stickIdx;
-
-    // 5 sticks in a tight cluster
-    const angles = [0, 1.26, 2.51, 3.77, 5.03]; // evenly spaced
-    const stickR = 1.8;
-    const stickOffX = Math.cos(angles[stickIdx]) * stickR;
-    const stickOffY = Math.sin(angles[stickIdx]) * stickR;
-
-    // Each stick is a vertical cylinder
-    const stickHeight = 8;
-    const stickWidth = 1.2;
-    const sy = dynamiteY + stickOffY + (stickT - 0.5) * stickHeight;
-    const sx = dynamiteX + stickOffX;
-    const sz = (hash(i + 100) - 0.5) * stickWidth;
-    const jx = (hash(i + 200) - 0.5) * 0.6;
-
-    return [sx + jx, sy, sz];
-  } else if (norm < 0.30) {
-    // Fuse line — particles along the curvy fuse
-    const fuseNorm = (norm - 0.15) / 0.15;
-
-    // Unburned portion: only show fuse ahead of the burn front
-    const fusePos = fuseNorm; // 0 = lit end, 1 = dynamite end
-    const [fx, fy] = fusePoint(fusePos);
-
-    // If this part of the fuse has already burned, scatter it as smoke
-    if (isBurning && fusePos < burnProgress) {
-      // Burned — dissolve into faint smoke rising up
-      const smokeAge = (burnProgress - fusePos) * 3;
-      const sx = fx + (hash(i + 300) - 0.5) * smokeAge * 4;
-      const sy = fy + smokeAge * 5;
-      const sz = (hash(i + 400) - 0.5) * smokeAge * 3;
-      return [sx, sy, sz];
-    }
-
-    // Unburned fuse
-    const jx = (hash(i + 500) - 0.5) * 0.6;
-    const jy = (hash(i + 600) - 0.5) * 0.6;
-    const jz = (hash(i + 700) - 0.5) * 1.5;
-    return [fx + jx, fy + jy, jz];
-  } else if (norm < 0.45) {
-    // Spark / flame at the burn point — travels along the fuse
-    const sparkNorm = (norm - 0.30) / 0.15;
-
-    if (isBurning) {
-      const [bx, by] = fusePoint(burnProgress);
-      // Sparks scatter around the burn point
-      const angle = hash(i + 800) * Math.PI * 2;
-      const dist = hash(i + 900) * 2.5;
-      const flicker = Math.sin(time * 15 + i * 0.3) * 0.5;
-      const sx = bx + Math.cos(angle) * dist + flicker;
-      const sy = by + Math.sin(angle) * dist * 0.6 + Math.abs(flicker) * 2;
-      const sz = (hash(i + 1000) - 0.5) * 2;
-      return [sx, sy, sz];
-    } else {
-      // During explosion, these become part of the blast
-      const angle = hash(i + 800) * Math.PI * 2;
-      const speed = 8 + hash(i + 850) * 14;
-      const dist = explodeProgress * speed;
-      const drag = 1 - explodeProgress * 0.3;
-      const sx = dynamiteX + Math.cos(angle) * dist * drag;
-      const sy = dynamiteY + Math.sin(angle) * dist * drag * 0.8 + explodeProgress * 3;
-      const sz = (hash(i + 1000) - 0.5) * dist * 0.5;
-      return [sx, sy, sz];
-    }
-  } else {
-    // Explosion particles — dormant until detonation, then burst outward
-    const blastNorm = (norm - 0.45) / 0.55;
-
-    if (isBurning) {
-      // Before explosion: particles compressed inside the dynamite bundle
-      const angle = hash(i + 1100) * Math.PI * 2;
-      const r = hash(i + 1200) * 2;
-      const sx = dynamiteX + Math.cos(angle) * r;
-      const sy = dynamiteY + Math.sin(angle) * r;
-      const sz = (hash(i + 1300) - 0.5) * 2;
-      return [sx, sy, sz];
-    } else {
-      // Explosion: particles fly outward in all directions
-      const angle = hash(i + 1100) * Math.PI * 2;
-      const elevation = (hash(i + 1400) - 0.3) * Math.PI; // bias upward
-      const speed = 5 + hash(i + 1500) * 18;
-      const dist = explodeProgress * speed;
-      const gravity = explodeProgress * explodeProgress * 8; // particles fall back
-      const drag = 1 - explodeProgress * 0.2;
-
-      const sx = dynamiteX + Math.cos(angle) * Math.cos(elevation) * dist * drag;
-      const sy = dynamiteY + Math.sin(elevation) * dist * drag - gravity + 2;
-      const sz = Math.sin(angle) * Math.cos(elevation) * dist * 0.6;
-
-      // Add trailing scatter
-      const jx = (hash(i + 1600) - 0.5) * explodeProgress * 3;
-      const jy = (hash(i + 1700) - 0.5) * explodeProgress * 2;
-
-      return [sx + jx, sy + jy, sz];
-    }
-  }
+  return [x + jx, y + jy, z];
 }
 
-const shapeFns = [shapeRocket, shapeGear, shapeBook, shapeFunnel, shapeTorus, shapeInfinity, shapeFuse];
+const shapeFns = [shapeRocket, shapeGear, shapeBook, shapeFunnel, shapeTorus, shapeInfinity, shapeSpiral];
 
 /* ─── Phase color configs [sat, lit] — dark particles on light background ─── */
 const phaseColors: [number, number][] = [
