@@ -472,7 +472,8 @@ function RocketLabel3D({
 /* ─── Rotating 3D labels that appear only during rocket phase ─── */
 function RocketLabels({ visible, phaseTimeRef }: { visible: boolean; phaseTimeRef: React.MutableRefObject<number> }) {
   const groupRef = useRef<THREE.Group>(null);
-  const [opacity, setOpacity] = useState(1);
+  const [opacity, setOpacity] = useState(visible ? 1 : 0);
+  const prevVisible = useRef(visible);
 
   useFrame((state) => {
     if (!groupRef.current) return;
@@ -480,13 +481,20 @@ function RocketLabels({ visible, phaseTimeRef }: { visible: boolean; phaseTimeRe
     const angle = time * 0.4 + Math.PI / 4;
     groupRef.current.rotation.y = angle;
 
-    // Fade out labels after 60% of the rocket phase
-    const rocketDur = PHASE_DURS[0];
-    const pt = phaseTimeRef.current;
-    const fadeStart = rocketDur * 0.55;
-    const fadeDur = rocketDur * 0.15;
-    const newOpacity = visible ? Math.max(0, Math.min(1, 1 - (pt - fadeStart) / fadeDur)) : 0;
-    setOpacity(newOpacity);
+    // Reset opacity to 1 when rocket phase starts
+    if (visible && !prevVisible.current) {
+      setOpacity(1);
+    }
+    prevVisible.current = visible;
+
+    if (visible) {
+      const rocketDur = PHASE_DURS[0];
+      const pt = phaseTimeRef.current;
+      const fadeStart = rocketDur * 0.55;
+      const fadeDur = rocketDur * 0.15;
+      const newOp = Math.max(0, Math.min(1, 1 - (pt - fadeStart) / fadeDur));
+      setOpacity(newOp);
+    }
   });
 
   if (!visible || opacity <= 0) return null;
