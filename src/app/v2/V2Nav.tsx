@@ -145,22 +145,15 @@ export default function V2Nav({ currentPage, variant = "light" }: V2NavProps) {
   const hoverClass = isDark ? "v2-nav-hover-dark" : "v2-nav-hover";
 
   return (
-    <div
-      className="fixed top-0 left-0 right-0 z-50"
-      style={{
-        background: isDark ? "rgba(10,10,10,0.85)" : "rgba(249,249,248,0.6)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
-      }}
-    >
+    <div className="fixed top-0 left-0 right-0 z-50">
     <nav
       className={`flex items-center font-mono-ui text-xs tracking-wide ${
         isDark ? "text-neutral-400" : "text-neutral-600"
       }`}
       style={{ padding: "12px 24px" }}
     >
-      {/* DC Logo — pinned left */}
-      <div className="flex items-center gap-3 shrink-0">
+      {/* DC Logo + Nav links — left aligned together */}
+      <div className="flex items-center gap-4 shrink-0">
         <a
           href="/v2"
           className={`${pillClass} font-semibold flex items-center gap-2 text-sm hover:opacity-80 transition-opacity ${
@@ -170,30 +163,28 @@ export default function V2Nav({ currentPage, variant = "light" }: V2NavProps) {
           <div className={`w-3 h-3 rounded-full ${isDark ? "bg-white" : "bg-black"}`} /> DC
         </a>
 
-        {/* ASCII Glitch Boxes */}
-        <AsciiBoxes isDark={isDark} />
+        <div className="hidden md:flex gap-3">
+          {navLinks.map((link) => {
+            const isActive = currentPage === link.label;
+            const activeColor = isDark ? "text-white" : "text-black";
+
+            return (
+              <a
+                key={link.key}
+                href={link.href}
+                className={`${pillClass} transition-colors ${
+                  isActive ? activeColor : `${hoverClass} ${isDark ? "hover:text-white" : "hover:text-black"}`
+                }`}
+              >
+                {link.label}
+                {link.icon && <link.icon className="w-3 h-3 inline-block -mt-0.5 ml-0.5" />}
+              </a>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Nav links — centered */}
-      <div className="hidden md:flex gap-3 flex-1 justify-center">
-        {navLinks.map((link) => {
-          const isActive = currentPage === link.label;
-          const activeColor = isDark ? "text-white" : "text-black";
-
-          return (
-            <a
-              key={link.key}
-              href={link.href}
-              className={`${pillClass} transition-colors ${
-                isActive ? activeColor : `${hoverClass} ${isDark ? "hover:text-white" : "hover:text-black"}`
-              }`}
-            >
-              <span className="opacity-40">[{link.key}]</span> {link.label}
-              {link.icon && <link.icon className="w-3 h-3 inline-block -mt-0.5 ml-0.5" />}
-            </a>
-          );
-        })}
-      </div>
+      <div className="flex-1" />
 
       {/* Right side — pinned right */}
       <div className="flex items-center gap-3 shrink-0">
@@ -229,21 +220,12 @@ export default function V2Nav({ currentPage, variant = "light" }: V2NavProps) {
                 borderColor: "rgba(0, 0, 0, 0.3)",
               }}
             >
-              <span className="opacity-50">[C]</span> CONTACT
+              CONTACT
             </a>
           </>
         )}
       </div>
     </nav>
-    {/* Gradient bottom line — darkest in center, fades at edges */}
-    <div
-      style={{
-        height: 1,
-        background: isDark
-          ? "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 5%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 95%, transparent 100%)"
-          : "linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.1) 5%, rgba(0,0,0,0.18) 50%, rgba(0,0,0,0.1) 95%, transparent 100%)",
-      }}
-    />
     </div>
   );
 }

@@ -320,10 +320,31 @@ export default function HeroSection() {
   return (
     <div ref={containerRef} className="relative flex flex-col border-b border-black/10" style={{ height: "calc(100vh + 40px)", maxHeight: 1120 }}>
       {/* Main hero content area — fills viewport minus marquee */}
-      <div className="relative flex-1 overflow-hidden">
+      <div className={`relative flex-1 ${visualId.endsWith("-full") ? "" : "overflow-hidden"}`}>
+
+        {/* ── Full particle overlay (same position as staircase, no clip) ── */}
+        {cellSize > 0 && visualId.endsWith("-full") && (() => {
+          const match = heroVisuals.find((v) => v.id === visualId);
+          const FullVisual = match?.component;
+          return FullVisual ? (
+            <div
+              className="absolute"
+              style={{
+                left: colLeft(3),
+                top: rowTop(1),
+                width: stairW,
+                height: stairH,
+              }}
+            >
+              <div style={{ position: "relative", width: stairW, height: stairH, overflow: "visible" }}>
+                <FullVisual width={stairW} height={stairH} />
+              </div>
+            </div>
+          ) : null;
+        })()}
 
         {/* ── Staircase (absolutely positioned to align with grid) ── */}
-        {cellSize > 0 && (
+        {cellSize > 0 && !visualId.endsWith("-full") && (
           <>
             <div
               className="absolute overflow-hidden"
@@ -400,9 +421,40 @@ export default function HeroSection() {
                 (() => {
                   const match = heroVisuals.find((v) => v.id === visualId);
                   const VisualComponent = match?.component;
+                  const isParticleScene = ["reactor", "gear-particles", "rocket-particles", "morph"].includes(visualId);
+                  const isParticleSceneDark = isParticleScene; // dark versions need black bg
                   return VisualComponent ? (
-                    <div style={{ position: "relative", width: stairW, height: stairH }}>
+                    <div style={{ position: "relative", width: stairW, height: stairH, background: isParticleSceneDark ? "#000" : undefined }}>
                       <VisualComponent width={stairW} height={stairH} />
+                      {/* Vignette for particle scenes — lighter edges, darker center */}
+                      {isParticleScene && (
+                        <div
+                          className="absolute inset-0 pointer-events-none"
+                          style={{
+                            background: "radial-gradient(ellipse at center, transparent 30%, rgba(255,255,255,0.06) 100%)",
+                          }}
+                        />
+                      )}
+                      {/* Grayscale noise */}
+                      <div
+                        className="absolute inset-0 pointer-events-none"
+                        style={{
+                          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 1024 1024' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.5' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+                          backgroundSize: "512px 512px",
+                          opacity: isParticleScene ? 0.15 : 0.35,
+                          mixBlendMode: isParticleScene ? "screen" : "multiply",
+                        }}
+                      />
+                      {/* CRT scanlines */}
+                      <div
+                        className="absolute inset-0 pointer-events-none"
+                        style={{
+                          backgroundImage: isParticleScene
+                            ? "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.03) 2px, rgba(255,255,255,0.03) 3px)"
+                            : "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.12) 2px, rgba(0,0,0,0.12) 3px)",
+                          opacity: 0.5,
+                        }}
+                      />
                     </div>
                   ) : null;
                 })()
@@ -437,18 +489,6 @@ export default function HeroSection() {
             {/* DC label — sits in col 0 */}
             <div className="font-mono-ui text-[10px] text-neutral-400 uppercase tracking-widest leading-relaxed" style={{ width: cellSize }}>
               Demand Curve<br /><span className="text-neutral-300">& Growth Systems</span>
-            </div>
-            {/* Credential tags — aligned to col 1 */}
-            <div className="flex items-center gap-2" style={{ marginLeft: GAP }}>
-              <span className="font-mono-ui text-[10px] uppercase tracking-widest text-neutral-500 bg-neutral-100 border border-dashed border-neutral-300 rounded px-2.5 py-1">
-                10 Years Proven
-              </span>
-              <span className="font-mono-ui text-[10px] uppercase tracking-widest text-neutral-500 bg-neutral-100 border border-dashed border-neutral-300 rounded px-2.5 py-1">
-                YC-Backed
-              </span>
-              <span className="font-mono-ui text-[10px] uppercase tracking-widest text-neutral-500 bg-neutral-100 border border-dashed border-neutral-300 rounded px-2.5 py-1">
-                4,500+ Startups
-              </span>
             </div>
             {/* Clock — pushed to the right */}
             <div className="ml-auto font-mono-ui text-base tracking-tight text-neutral-500 tabular-nums" style={{ paddingRight: 8 }}>

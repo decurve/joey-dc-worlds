@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 
 type VisualProps = {
   width: number;
@@ -1701,22 +1701,1689 @@ export function EvolutionVisual({ width, height }: VisualProps) {
 }
 
 /* ═══════════════════════════════════════════════════
+   11. Rube Goldberg Engine — interlocking gears activated by mouse proximity
+   Mouse proximity adds energy to the nearest gear; energy propagates
+   through meshing neighbours. Idle gears slowly wind down.
+   ═══════════════════════════════════════════════════ */
+export function MachineVisual({ width, height }: VisualProps) {
+  const [Scene, setScene] = useState<React.ComponentType<{ width: number; height: number }> | null>(null);
+
+  useEffect(() => {
+    import("./MachineScene").then((mod) => setScene(() => mod.default));
+  }, []);
+
+  if (!Scene) return null;
+  return <Scene width={width} height={height} />;
+}
+
+
+/* ═══════════════════════════════════════════════════
+   12. Circuit Board — signals flow along PCB-style traces
+   Mouse proximity lights up nearby nodes and speeds signal flow.
+   Nodes pulse when signals pass through. Ambient slow flow.
+   ═══════════════════════════════════════════════════ */
+export function CircuitVisual({ width, height }: { width: number; height: number }) {
+  const [Scene, setScene] = useState<any>(null);
+  useEffect(() => {
+    import("./CircuitScene").then(mod => setScene(() => mod.default));
+  }, []);
+  if (!Scene) return null;
+  return <Scene width={width} height={height} />;
+}
+
+/* ═══════════════════════════════════════════════════
+   13. Compound Interest Curve — a single exponential line graph
+   Mouse X controls how far the curve is revealed.
+   Milestones appear along the path. Particles trail the leading edge.
+   ═══════════════════════════════════════════════════ */
+export function CompoundVisual({ width, height }: VisualProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const state = useRef({
+    mouse: { x: 0, active: false },
+    revealT: 0,
+    particles: [] as {
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      alpha: number;
+      life: number;
+    }[],
+    time: 0,
+  });
+  const frameRef = useRef(0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    canvas.width = width;
+    canvas.height = height;
+
+    const s = state.current;
+
+    const marginL = 60;
+    const marginR = 40;
+    const marginT = 40;
+    const marginB = 60;
+    const gw = width - marginL - marginR;
+    const gh = height - marginT - marginB;
+
+    const milestones = [
+      { t: 0.2, label: "First 100 users" },
+      { t: 0.4, label: "Product-market fit" },
+      { t: 0.6, label: "Channel-market fit" },
+      { t: 0.8, label: "Scale" },
+    ];
+
+    // Exponential curve: flat for ~60% then hockey-stick
+    const k = 6;
+    const expDenom = Math.exp(k) - 1;
+    function curveY(t: number) {
+      return (Math.exp(k * t) - 1) / expDenom;
+    }
+
+    function toCanvas(t: number): { x: number; y: number } {
+      return {
+        x: marginL + t * gw,
+        y: marginT + gh - curveY(t) * gh,
+      };
+    }
+
+    const handleMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      s.mouse.x = (e.clientX - rect.left) / rect.width;
+      s.mouse.active = true;
+    };
+    const handleLeave = () => {
+      s.mouse.active = false;
+    };
+    canvas.addEventListener("mousemove", handleMove);
+    canvas.addEventListener("mouseleave", handleLeave);
+
+    function loop() {
+      if (!ctx) return;
+      ctx.clearRect(0, 0, width, height);
+      s.time += 0.016;
+
+      // Ease revealT toward target
+      const target = s.mouse.active
+        ? Math.max(0.02, Math.min(1, s.mouse.x))
+        : 0;
+      const speed = s.mouse.active ? 0.04 : 0.015;
+      s.revealT += (target - s.revealT) * speed;
+      if (s.revealT < 0.001) s.revealT = 0;
+
+      const reveal = s.revealT;
+
+      // --- Grid lines (very faint) ---
+      ctx.strokeStyle = "rgba(0,0,0,0.04)";
+      ctx.lineWidth = 0.5;
+      const gridCountX = 12;
+      const gridCountY = 8;
+      for (let i = 0; i <= gridCountX; i++) {
+        const x = marginL + (i / gridCountX) * gw;
+        ctx.beginPath();
+        ctx.moveTo(x, marginT);
+        ctx.lineTo(x, marginT + gh);
+        ctx.stroke();
+      }
+      for (let i = 0; i <= gridCountY; i++) {
+        const y = marginT + (i / gridCountY) * gh;
+        ctx.beginPath();
+        ctx.moveTo(marginL, y);
+        ctx.lineTo(marginL + gw, y);
+        ctx.stroke();
+      }
+
+      // --- Axes ---
+      ctx.strokeStyle = "rgba(0,0,0,0.15)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(marginL, marginT);
+      ctx.lineTo(marginL, marginT + gh);
+      ctx.lineTo(marginL + gw, marginT + gh);
+      ctx.stroke();
+
+      // Axis labels
+      ctx.fillStyle = "rgba(0,0,0,0.25)";
+      ctx.font = "9px monospace";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "alphabetic";
+      ctx.fillText("TIME \u2192", marginL + gw / 2, marginT + gh + 30);
+      ctx.save();
+      ctx.translate(18, marginT + gh / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText("\u2191 GROWTH", 0, 0);
+      ctx.restore();
+
+      // --- Draw curve ---
+      if (reveal > 0.001) {
+        ctx.strokeStyle = "rgba(0,0,0,0.7)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        const steps = Math.floor(reveal * 200);
+        for (let i = 0; i <= steps; i++) {
+          const t = i / 200;
+          const p = toCanvas(t);
+          if (i === 0) ctx.moveTo(p.x, p.y);
+          else ctx.lineTo(p.x, p.y);
+        }
+        ctx.stroke();
+
+        // Leading edge dot
+        const edge = toCanvas(reveal);
+        ctx.fillStyle = "rgba(0,0,0,0.8)";
+        ctx.beginPath();
+        ctx.arc(edge.x, edge.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Spawn trail particles at edge
+        if (Math.random() < 0.3 && reveal > 0.01) {
+          s.particles.push({
+            x: edge.x,
+            y: edge.y,
+            vx: (Math.random() - 0.5) * 1.5,
+            vy: (Math.random() - 0.5) * 1.5,
+            alpha: 0.4,
+            life: 1,
+          });
+        }
+
+        // --- Milestones ---
+        for (const ms of milestones) {
+          if (ms.t > reveal) continue;
+          const p = toCanvas(ms.t);
+
+          // Dot
+          ctx.fillStyle = "rgba(0,0,0,0.6)";
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Dashed line down to x-axis
+          ctx.save();
+          ctx.setLineDash([2, 3]);
+          ctx.strokeStyle = "rgba(0,0,0,0.1)";
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(p.x, marginT + gh);
+          ctx.stroke();
+          ctx.restore();
+
+          // Label
+          ctx.fillStyle = "rgba(0,0,0,0.5)";
+          ctx.font = "9px monospace";
+          ctx.textAlign = "left";
+          ctx.textBaseline = "alphabetic";
+          ctx.fillText(ms.label, p.x + 6, p.y - 10);
+        }
+      }
+
+      // --- Particles ---
+      for (let i = s.particles.length - 1; i >= 0; i--) {
+        const p = s.particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= 0.015;
+        p.alpha = p.life * 0.3;
+        if (p.life <= 0) {
+          s.particles.splice(i, 1);
+          continue;
+        }
+        ctx.fillStyle = `rgba(0,0,0,${p.alpha})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      if (s.particles.length > 60)
+        s.particles.splice(0, s.particles.length - 60);
+
+      // --- Bottom-left label ---
+      const pct = Math.round(reveal * 100);
+      ctx.fillStyle = "rgba(0,0,0,0.35)";
+      ctx.font = "bold 11px monospace";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+      ctx.fillText(`COMPOUND GROWTH  ${pct}%`, marginL, height - 14);
+
+      frameRef.current = requestAnimationFrame(loop);
+    }
+
+    frameRef.current = requestAnimationFrame(loop);
+
+    return () => {
+      cancelAnimationFrame(frameRef.current);
+      canvas.removeEventListener("mousemove", handleMove);
+      canvas.removeEventListener("mouseleave", handleLeave);
+    };
+  }, [width, height]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+      }}
+    />
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   14. Flywheel — a heavy industrial wheel with momentum
+   Mouse movement adds angular velocity. Spins with inertia.
+   Labels orbit around the rim. Particles fly off when fast.
+   ═══════════════════════════════════════════════════ */
+export function FlywheelVisual({ width, height }: VisualProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const state = useRef({
+    mouse: { x: 0, y: 0, prevX: 0, prevY: 0, active: false },
+    angle: 0,
+    angularVel: 0,
+    particles: [] as {
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      alpha: number;
+      life: number;
+    }[],
+    time: 0,
+    wobble: 0,
+  });
+  const frameRef = useRef(0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    canvas.width = width;
+    canvas.height = height;
+
+    const s = state.current;
+    const cx = width / 2;
+    const cy = height / 2;
+    const radius = Math.min(width, height) * 0.38;
+    const rimWidth = radius * 0.12;
+    const spokeCount = 8;
+    const labels = ["CONTENT", "TRAFFIC", "LEADS", "REVENUE", "REINVEST"];
+
+    const handleMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      s.mouse.prevX = s.mouse.x;
+      s.mouse.prevY = s.mouse.y;
+      s.mouse.x = e.clientX - rect.left;
+      s.mouse.y = e.clientY - rect.top;
+      s.mouse.active = true;
+
+      // Cross product gives tangential component of mouse movement
+      const dx = s.mouse.x - cx;
+      const dy = s.mouse.y - cy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > 20) {
+        const mdx = s.mouse.x - s.mouse.prevX;
+        const mdy = s.mouse.y - s.mouse.prevY;
+        const cross = (dx * mdy - dy * mdx) / (dist * dist);
+        s.angularVel += cross * 0.8;
+      }
+    };
+    const handleLeave = () => {
+      s.mouse.active = false;
+    };
+    const handleEnter = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      s.mouse.x = e.clientX - rect.left;
+      s.mouse.y = e.clientY - rect.top;
+      s.mouse.prevX = s.mouse.x;
+      s.mouse.prevY = s.mouse.y;
+      s.mouse.active = true;
+    };
+    canvas.addEventListener("mousemove", handleMove);
+    canvas.addEventListener("mouseleave", handleLeave);
+    canvas.addEventListener("mouseenter", handleEnter);
+
+    function loop() {
+      if (!ctx) return;
+      ctx.clearRect(0, 0, width, height);
+      s.time += 0.016;
+
+      // Friction
+      s.angularVel *= 0.995;
+
+      // Clamp max speed
+      const maxVel = 0.15;
+      if (s.angularVel > maxVel) s.angularVel = maxVel;
+      if (s.angularVel < -maxVel) s.angularVel = -maxVel;
+
+      // Wobble when nearly still
+      const absVel = Math.abs(s.angularVel);
+      if (absVel < 0.002) {
+        s.wobble += 0.03;
+        s.angle += Math.sin(s.wobble) * 0.001;
+      } else {
+        s.angle += s.angularVel;
+        s.wobble = 0;
+      }
+
+      const rpm = Math.round(
+        (Math.abs(s.angularVel) * 60) / (Math.PI * 2) * 60
+      );
+      const intensity = Math.min(1, absVel / 0.08);
+
+      // --- Rim ---
+      const outerR = radius;
+      const innerR = radius - rimWidth;
+      const baseAlpha = 0.15 + intensity * 0.55;
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
+      ctx.arc(cx, cy, innerR, 0, Math.PI * 2, true);
+      ctx.fillStyle = `rgba(0,0,0,${baseAlpha * 0.3})`;
+      ctx.fill();
+
+      ctx.strokeStyle = `rgba(0,0,0,${baseAlpha})`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // --- Hub ---
+      const hubR = radius * 0.1;
+      ctx.fillStyle = `rgba(0,0,0,${baseAlpha * 0.4})`;
+      ctx.beginPath();
+      ctx.arc(cx, cy, hubR, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = `rgba(0,0,0,${baseAlpha})`;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // --- Spokes with motion blur ---
+      const blurCopies = intensity > 0.3 ? Math.floor(intensity * 4) : 0;
+      for (let b = -blurCopies; b <= 0; b++) {
+        const blurAngle = s.angle + b * s.angularVel * 0.5;
+        const blurAlpha = b === 0 ? baseAlpha : baseAlpha * 0.12;
+        ctx.strokeStyle = `rgba(0,0,0,${blurAlpha})`;
+        ctx.lineWidth = b === 0 ? 1.5 : 1;
+        for (let i = 0; i < spokeCount; i++) {
+          const a = blurAngle + (i / spokeCount) * Math.PI * 2;
+          const sx = cx + Math.cos(a) * (hubR + 2);
+          const sy = cy + Math.sin(a) * (hubR + 2);
+          const ex = cx + Math.cos(a) * (innerR - 2);
+          const ey = cy + Math.sin(a) * (innerR - 2);
+          ctx.beginPath();
+          ctx.moveTo(sx, sy);
+          ctx.lineTo(ex, ey);
+          ctx.stroke();
+        }
+      }
+
+      // --- Center "DC" text ---
+      ctx.fillStyle = `rgba(0,0,0,${0.2 + intensity * 0.4})`;
+      ctx.font = `bold ${Math.round(hubR * 0.9)}px monospace`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("DC", cx, cy + 1);
+
+      // --- Orbiting labels ---
+      const labelR = outerR + 22;
+      ctx.font = "9px monospace";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      for (let i = 0; i < labels.length; i++) {
+        const a = s.angle + (i / labels.length) * Math.PI * 2;
+        const lx = cx + Math.cos(a) * labelR;
+        const ly = cy + Math.sin(a) * labelR;
+        ctx.fillStyle = `rgba(0,0,0,${0.25 + intensity * 0.35})`;
+
+        ctx.save();
+        ctx.translate(lx, ly);
+        ctx.rotate(a + Math.PI / 2);
+        ctx.fillText(labels[i], 0, 0);
+        ctx.restore();
+
+        // Arrow to next label
+        const midA = a + (1 / labels.length) * Math.PI;
+        const arrowR = outerR + 14;
+        const ax = cx + Math.cos(midA) * arrowR;
+        const ay = cy + Math.sin(midA) * arrowR;
+        ctx.fillStyle = `rgba(0,0,0,${0.15 + intensity * 0.2})`;
+        ctx.font = "8px monospace";
+        ctx.save();
+        ctx.translate(ax, ay);
+        ctx.rotate(midA + Math.PI / 2);
+        ctx.fillText("\u2192", 0, 0);
+        ctx.restore();
+        // Reset font for next label iteration
+        ctx.font = "9px monospace";
+      }
+
+      // --- Centrifugal particles ---
+      if (absVel > 0.02 && Math.random() < intensity * 0.5) {
+        const spawnAngle = s.angle + Math.random() * Math.PI * 2;
+        const px = cx + Math.cos(spawnAngle) * outerR;
+        const py = cy + Math.sin(spawnAngle) * outerR;
+        const tangentDir = s.angularVel > 0 ? 1 : -1;
+        const outVx = Math.cos(spawnAngle) * absVel * 15;
+        const outVy = Math.sin(spawnAngle) * absVel * 15;
+        const tanVx =
+          -Math.sin(spawnAngle) * tangentDir * absVel * 10;
+        const tanVy =
+          Math.cos(spawnAngle) * tangentDir * absVel * 10;
+        s.particles.push({
+          x: px,
+          y: py,
+          vx: outVx + tanVx + (Math.random() - 0.5),
+          vy: outVy + tanVy + (Math.random() - 0.5),
+          alpha: 0.3 + intensity * 0.3,
+          life: 1,
+        });
+      }
+
+      // Update & draw particles
+      for (let i = s.particles.length - 1; i >= 0; i--) {
+        const p = s.particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vx *= 0.97;
+        p.vy *= 0.97;
+        p.life -= 0.02;
+        p.alpha = p.life * 0.3;
+        if (p.life <= 0) {
+          s.particles.splice(i, 1);
+          continue;
+        }
+        ctx.fillStyle = `rgba(0,0,0,${p.alpha})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      if (s.particles.length > 80)
+        s.particles.splice(0, s.particles.length - 80);
+
+      // --- RPM indicator bottom-left ---
+      ctx.fillStyle = "rgba(0,0,0,0.35)";
+      ctx.font = "bold 11px monospace";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+      ctx.fillText(`RPM: ${rpm}`, 20, height - 14);
+
+      frameRef.current = requestAnimationFrame(loop);
+    }
+
+    frameRef.current = requestAnimationFrame(loop);
+
+    return () => {
+      cancelAnimationFrame(frameRef.current);
+      canvas.removeEventListener("mousemove", handleMove);
+      canvas.removeEventListener("mouseleave", handleLeave);
+      canvas.removeEventListener("mouseenter", handleEnter);
+    };
+  }, [width, height]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+      }}
+    />
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   15. Ecosystem — seed → full ecosystem. Mouse X = time/evolution.
+   Move right to fast-forward from bare ground to thriving forest.
+   ═══════════════════════════════════════════════════ */
+export function EcosystemVisual({ width, height }: VisualProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const state = useRef({
+    mouse: { x: 0, y: height / 2, active: false },
+    time: 0,
+    seed: Math.random() * 999,
+    progress: 0,
+  });
+  const frameRef = useRef(0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    canvas.width = width;
+    canvas.height = height;
+
+    const s = state.current;
+    const groundY = height * 0.7;
+
+    function seededRandom(n: number) {
+      const x = Math.sin(s.seed + n * 127.1) * 43758.5453;
+      return x - Math.floor(x);
+    }
+
+    const handleMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      s.mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top, active: true };
+    };
+    const handleLeave = () => { s.mouse.active = false; };
+    canvas.addEventListener("mousemove", handleMove);
+    canvas.addEventListener("mouseleave", handleLeave);
+
+    // Pre-generate stable positions
+    const grassBlades: { x: number; h: number }[] = [];
+    for (let i = 0; i < 80; i++) {
+      grassBlades.push({ x: seededRandom(i * 3) * width, h: 5 + seededRandom(i * 3 + 1) * 15 });
+    }
+    const treeDefs: { x: number; maxH: number; canopyR: number; appearAt: number }[] = [
+      { x: width * 0.5, maxH: 120, canopyR: 50, appearAt: 0.15 },
+      { x: width * 0.3, maxH: 80, canopyR: 35, appearAt: 0.50 },
+      { x: width * 0.7, maxH: 90, canopyR: 40, appearAt: 0.55 },
+      { x: width * 0.15, maxH: 70, canopyR: 30, appearAt: 0.65 },
+      { x: width * 0.85, maxH: 75, canopyR: 32, appearAt: 0.70 },
+      { x: width * 0.42, maxH: 100, canopyR: 45, appearAt: 0.72 },
+      { x: width * 0.62, maxH: 85, canopyR: 38, appearAt: 0.75 },
+    ];
+    const flowerDefs: { x: number; stemH: number; appearAt: number }[] = [];
+    for (let i = 0; i < 15; i++) {
+      flowerDefs.push({ x: seededRandom(200 + i) * width, stemH: 8 + seededRandom(201 + i) * 12, appearAt: 0.3 + seededRandom(202 + i) * 0.3 });
+    }
+    const birdDefs: { baseX: number; baseY: number; speed: number; amp: number; appearAt: number }[] = [];
+    for (let i = 0; i < 6; i++) {
+      birdDefs.push({
+        baseX: seededRandom(300 + i) * width,
+        baseY: height * 0.1 + seededRandom(301 + i) * height * 0.25,
+        speed: 0.3 + seededRandom(302 + i) * 0.5,
+        amp: 5 + seededRandom(303 + i) * 10,
+        appearAt: 0.65 + seededRandom(304 + i) * 0.2,
+      });
+    }
+    const mushroomDefs: { treeIdx: number; side: number; appearAt: number }[] = [];
+    for (let i = 0; i < 5; i++) {
+      mushroomDefs.push({ treeIdx: i % treeDefs.length, side: seededRandom(400 + i) > 0.5 ? 1 : -1, appearAt: 0.8 + seededRandom(401 + i) * 0.15 });
+    }
+
+    function getStage(p: number): string {
+      if (p < 0.15) return "BARREN SOIL";
+      if (p < 0.30) return "FIRST SPROUT";
+      if (p < 0.50) return "YOUNG GROWTH";
+      if (p < 0.70) return "WOODLAND";
+      if (p < 0.85) return "FOREST";
+      return "FULL ECOSYSTEM";
+    }
+
+    function lerp(a: number, b: number, t: number) { return a + (b - a) * t; }
+    function clamp01(v: number) { return Math.max(0, Math.min(1, v)); }
+
+    function getGroundYAt(x: number) {
+      return groundY + Math.sin(x * 0.008 + 1) * 8 + Math.sin(x * 0.015 + 3) * 5;
+    }
+
+    function drawGround(p: number) {
+      ctx!.beginPath();
+      ctx!.moveTo(0, groundY);
+      for (let x = 0; x <= width; x += 2) {
+        ctx!.lineTo(x, getGroundYAt(x));
+      }
+      ctx!.lineTo(width, height);
+      ctx!.lineTo(0, height);
+      ctx!.closePath();
+      ctx!.fillStyle = `rgba(0,0,0,${0.04 + p * 0.04})`;
+      ctx!.fill();
+      ctx!.beginPath();
+      for (let x = 0; x <= width; x += 2) {
+        if (x === 0) ctx!.moveTo(x, getGroundYAt(x));
+        else ctx!.lineTo(x, getGroundYAt(x));
+      }
+      ctx!.strokeStyle = `rgba(0,0,0,${0.15 + p * 0.1})`;
+      ctx!.lineWidth = 1;
+      ctx!.stroke();
+    }
+
+    function drawSeed(p: number) {
+      if (p > 0.2) return;
+      const seedProgress = clamp01(p / 0.15);
+      const seedX = width * 0.5;
+      const landY = getGroundYAt(seedX);
+      const seedY = lerp(landY - 60, landY - 3, seedProgress);
+      const opacity = p < 0.05 ? clamp01(p / 0.05) : (p > 0.15 ? 1 - clamp01((p - 0.15) / 0.05) : 1);
+      ctx!.beginPath();
+      ctx!.arc(seedX, seedY, 3, 0, Math.PI * 2);
+      ctx!.fillStyle = `rgba(0,0,0,${0.5 * opacity})`;
+      ctx!.fill();
+    }
+
+    function drawGrass(p: number) {
+      const grassAppear = clamp01((p - 0.12) / 0.2);
+      if (grassAppear <= 0) return;
+      const numBlades = Math.floor(grassBlades.length * clamp01(p / 0.6));
+      for (let i = 0; i < numBlades; i++) {
+        const blade = grassBlades[i];
+        const gy = getGroundYAt(blade.x);
+        const h = blade.h * grassAppear;
+        const sway = Math.sin(s.time * 0.002 + blade.x * 0.05) * 2 * grassAppear;
+        ctx!.beginPath();
+        ctx!.moveTo(blade.x, gy);
+        ctx!.lineTo(blade.x + sway, gy - h);
+        ctx!.strokeStyle = `rgba(0,0,0,${0.12 * grassAppear})`;
+        ctx!.lineWidth = 1;
+        ctx!.stroke();
+      }
+    }
+
+    function drawTree(treeDef: typeof treeDefs[0], p: number) {
+      const treeProgress = clamp01((p - treeDef.appearAt) / 0.2);
+      if (treeProgress <= 0) return;
+      const tx = treeDef.x;
+      const gy = getGroundYAt(tx);
+      const trunkH = treeDef.maxH * treeProgress;
+      const canopyR = treeDef.canopyR * treeProgress;
+
+      ctx!.beginPath();
+      ctx!.moveTo(tx, gy);
+      ctx!.lineTo(tx, gy - trunkH);
+      ctx!.strokeStyle = `rgba(0,0,0,${0.25 * treeProgress})`;
+      ctx!.lineWidth = 2 + treeProgress * 2;
+      ctx!.stroke();
+
+      if (treeProgress > 0.3) {
+        const canopyOp = clamp01((treeProgress - 0.3) / 0.7);
+        ctx!.beginPath();
+        ctx!.ellipse(tx, gy - trunkH - canopyR * 0.5, canopyR, canopyR * 0.8, 0, 0, Math.PI * 2);
+        ctx!.fillStyle = `rgba(0,0,0,${0.06 * canopyOp})`;
+        ctx!.fill();
+        ctx!.strokeStyle = `rgba(0,0,0,${0.12 * canopyOp})`;
+        ctx!.lineWidth = 1;
+        ctx!.stroke();
+      }
+    }
+
+    function drawFlowers(p: number) {
+      for (const f of flowerDefs) {
+        const fp = clamp01((p - f.appearAt) / 0.1);
+        if (fp <= 0) continue;
+        const gy = getGroundYAt(f.x);
+        const h = f.stemH * fp;
+        const sway = Math.sin(s.time * 0.003 + f.x * 0.1) * 1.5 * fp;
+        ctx!.beginPath();
+        ctx!.moveTo(f.x, gy);
+        ctx!.lineTo(f.x + sway, gy - h);
+        ctx!.strokeStyle = `rgba(0,0,0,${0.15 * fp})`;
+        ctx!.lineWidth = 1;
+        ctx!.stroke();
+        ctx!.beginPath();
+        ctx!.arc(f.x + sway, gy - h, 2 * fp, 0, Math.PI * 2);
+        ctx!.fillStyle = `rgba(0,0,0,${0.2 * fp})`;
+        ctx!.fill();
+      }
+    }
+
+    function drawRiver(p: number) {
+      const riverAppear = clamp01((p - 0.45) / 0.15);
+      if (riverAppear <= 0) return;
+      const riverY = groundY + 20;
+      ctx!.beginPath();
+      for (let x = 0; x <= width; x += 2) {
+        const wave = Math.sin(x * 0.02 + s.time * 0.003) * 3 * riverAppear;
+        if (x === 0) ctx!.moveTo(x, riverY + wave);
+        else ctx!.lineTo(x, riverY + wave);
+      }
+      ctx!.strokeStyle = `rgba(0,0,0,${0.1 * riverAppear})`;
+      ctx!.lineWidth = 1.5;
+      ctx!.stroke();
+      if (riverAppear > 0.5) {
+        const rippleOp = clamp01((riverAppear - 0.5) / 0.5);
+        for (let i = 0; i < 8; i++) {
+          const rx = seededRandom(500 + i) * width;
+          const rw = 10 + seededRandom(510 + i) * 15;
+          const wave2 = Math.sin(rx * 0.02 + s.time * 0.003) * 3 * riverAppear;
+          ctx!.beginPath();
+          ctx!.moveTo(rx, riverY + wave2 + 4);
+          ctx!.lineTo(rx + rw, riverY + wave2 + 4);
+          ctx!.strokeStyle = `rgba(0,0,0,${0.06 * rippleOp})`;
+          ctx!.lineWidth = 1;
+          ctx!.stroke();
+        }
+      }
+    }
+
+    function drawBirds(p: number) {
+      for (const b of birdDefs) {
+        const bp = clamp01((p - b.appearAt) / 0.1);
+        if (bp <= 0) continue;
+        const bx = (b.baseX + s.time * b.speed * 0.05) % (width + 40) - 20;
+        const by = b.baseY + Math.sin(s.time * 0.002 * b.speed + b.baseX) * b.amp;
+        ctx!.beginPath();
+        ctx!.moveTo(bx - 5, by + 2);
+        ctx!.lineTo(bx, by);
+        ctx!.lineTo(bx + 5, by + 2);
+        ctx!.strokeStyle = `rgba(0,0,0,${0.2 * bp})`;
+        ctx!.lineWidth = 1;
+        ctx!.stroke();
+      }
+    }
+
+    function drawClouds(p: number) {
+      const cloudAppear = clamp01((p - 0.8) / 0.15);
+      if (cloudAppear <= 0) return;
+      for (let i = 0; i < 3; i++) {
+        const cx = (seededRandom(600 + i) * width + s.time * 0.02 * (i + 1)) % (width + 100) - 50;
+        const cy = height * 0.08 + seededRandom(610 + i) * height * 0.1;
+        ctx!.beginPath();
+        ctx!.ellipse(cx, cy, 30, 10, 0, 0, Math.PI * 2);
+        ctx!.fillStyle = `rgba(0,0,0,${0.03 * cloudAppear})`;
+        ctx!.fill();
+        ctx!.beginPath();
+        ctx!.ellipse(cx + 15, cy - 3, 20, 8, 0, 0, Math.PI * 2);
+        ctx!.fillStyle = `rgba(0,0,0,${0.025 * cloudAppear})`;
+        ctx!.fill();
+      }
+    }
+
+    function drawMushrooms(p: number) {
+      for (const m of mushroomDefs) {
+        const mp = clamp01((p - m.appearAt) / 0.1);
+        if (mp <= 0) continue;
+        const tree = treeDefs[m.treeIdx];
+        const mx = tree.x + m.side * (8 + seededRandom(m.treeIdx * 7) * 8);
+        const gy = getGroundYAt(mx);
+        ctx!.beginPath();
+        ctx!.moveTo(mx, gy);
+        ctx!.lineTo(mx, gy - 6 * mp);
+        ctx!.strokeStyle = `rgba(0,0,0,${0.15 * mp})`;
+        ctx!.lineWidth = 1.5;
+        ctx!.stroke();
+        ctx!.beginPath();
+        ctx!.arc(mx, gy - 6 * mp, 4 * mp, Math.PI, 0);
+        ctx!.fillStyle = `rgba(0,0,0,${0.1 * mp})`;
+        ctx!.fill();
+      }
+    }
+
+    function drawLabel(p: number) {
+      ctx!.font = "11px monospace";
+      ctx!.fillStyle = "rgba(0,0,0,0.35)";
+      ctx!.fillText(`ECOSYSTEM: ${getStage(p)}`, 16, height - 16);
+    }
+
+    function draw() {
+      s.time++;
+      const targetProgress = s.mouse.active ? clamp01(s.mouse.x / width) : s.progress;
+      s.progress += (targetProgress - s.progress) * 0.04;
+      const p = s.progress;
+
+      ctx!.clearRect(0, 0, width, height);
+      drawGround(p);
+      drawSeed(p);
+      drawGrass(p);
+      drawRiver(p);
+      for (const t of treeDefs) drawTree(t, p);
+      drawFlowers(p);
+      drawMushrooms(p);
+      drawBirds(p);
+      drawClouds(p);
+      drawLabel(p);
+
+      frameRef.current = requestAnimationFrame(draw);
+    }
+
+    frameRef.current = requestAnimationFrame(draw);
+
+    return () => {
+      cancelAnimationFrame(frameRef.current);
+      canvas.removeEventListener("mousemove", handleMove);
+      canvas.removeEventListener("mouseleave", handleLeave);
+    };
+  }, [width, height]);
+
+  return <canvas ref={canvasRef} style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }} />;
+}
+
+/* ═══════════════════════════════════════════════════
+   16. Telescope — constellation map revealed by mouse proximity.
+   Move your mouse to discover 5 hidden growth-framework constellations.
+   ═══════════════════════════════════════════════════ */
+export function TelescopeVisual({ width, height }: VisualProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const state = useRef({
+    mouse: { x: -999, y: -999, active: false },
+    time: 0,
+    seed: Math.random() * 999,
+    discovered: new Set<number>(),
+  });
+  const frameRef = useRef(0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    canvas.width = width;
+    canvas.height = height;
+
+    const s = state.current;
+
+    function seededRandom(n: number) {
+      const x = Math.sin(s.seed + n * 127.1) * 43758.5453;
+      return x - Math.floor(x);
+    }
+
+    const handleMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      s.mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top, active: true };
+    };
+    const handleLeave = () => { s.mouse.active = false; };
+    canvas.addEventListener("mousemove", handleMove);
+    canvas.addEventListener("mouseleave", handleLeave);
+
+    // Background stars
+    const bgStars: { x: number; y: number; baseOp: number; phase: number; speed: number }[] = [];
+    for (let i = 0; i < 140; i++) {
+      bgStars.push({
+        x: seededRandom(i * 5) * width,
+        y: seededRandom(i * 5 + 1) * height,
+        baseOp: 0.08 + seededRandom(i * 5 + 2) * 0.12,
+        phase: seededRandom(i * 5 + 3) * Math.PI * 2,
+        speed: 0.5 + seededRandom(i * 5 + 4) * 1.5,
+      });
+    }
+
+    // Constellation definitions
+    type ConstellationDef = {
+      name: string;
+      cx: number; cy: number;
+      stars: { x: number; y: number }[];
+      lines: [number, number][];
+      reveal: number;
+    };
+
+    const constellations: ConstellationDef[] = [
+      // THE FUNNEL — triangle/funnel shape, upper-left area
+      {
+        name: "THE FUNNEL", cx: width * 0.18, cy: height * 0.25, reveal: 0,
+        stars: [
+          { x: -30, y: -40 }, { x: 30, y: -40 },
+          { x: -20, y: -15 }, { x: 20, y: -15 },
+          { x: -10, y: 10 }, { x: 10, y: 10 },
+          { x: 0, y: 35 },
+        ],
+        lines: [[0,1],[0,2],[1,3],[2,4],[3,5],[4,6],[5,6]],
+      },
+      // THE FLYWHEEL — circular pattern, upper-right
+      {
+        name: "THE FLYWHEEL", cx: width * 0.8, cy: height * 0.22, reveal: 0,
+        stars: (() => {
+          const pts: { x: number; y: number }[] = [];
+          for (let i = 0; i < 7; i++) {
+            const angle = (i / 7) * Math.PI * 2 - Math.PI / 2;
+            pts.push({ x: Math.cos(angle) * 35, y: Math.sin(angle) * 35 });
+          }
+          return pts;
+        })(),
+        lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,0]],
+      },
+      // THE LOOP — figure-8, center
+      {
+        name: "THE LOOP", cx: width * 0.5, cy: height * 0.5, reveal: 0,
+        stars: [
+          { x: 0, y: 0 },
+          { x: -25, y: -20 }, { x: -35, y: 0 }, { x: -25, y: 20 },
+          { x: 25, y: -20 }, { x: 35, y: 0 }, { x: 25, y: 20 },
+        ],
+        lines: [[0,1],[1,2],[2,3],[3,0],[0,4],[4,5],[5,6],[6,0]],
+      },
+      // THE LADDER — step pattern, lower-left
+      {
+        name: "THE LADDER", cx: width * 0.22, cy: height * 0.72, reveal: 0,
+        stars: [
+          { x: -20, y: 35 }, { x: 10, y: 35 },
+          { x: 10, y: 15 }, { x: 30, y: 15 },
+          { x: 30, y: -5 }, { x: 50, y: -5 },
+          { x: 50, y: -30 },
+        ],
+        lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6]],
+      },
+      // THE NETWORK — web pattern, lower-right
+      {
+        name: "THE NETWORK", cx: width * 0.78, cy: height * 0.72, reveal: 0,
+        stars: [
+          { x: 0, y: 0 },
+          { x: -30, y: -20 }, { x: 25, y: -25 },
+          { x: -35, y: 15 }, { x: 30, y: 20 },
+          { x: 0, y: 35 },
+        ],
+        lines: [[0,1],[0,2],[0,3],[0,4],[0,5],[1,2],[2,4],[4,5],[5,3],[3,1]],
+      },
+    ];
+
+    const REVEAL_RADIUS = 150;
+
+    function drawBgStars() {
+      for (const star of bgStars) {
+        const twinkle = Math.sin(s.time * 0.02 * star.speed + star.phase) * 0.5 + 0.5;
+        const op = star.baseOp * (0.5 + twinkle * 0.5);
+        ctx!.beginPath();
+        ctx!.arc(star.x, star.y, 1, 0, Math.PI * 2);
+        ctx!.fillStyle = `rgba(0,0,0,${op})`;
+        ctx!.fill();
+      }
+    }
+
+    function drawConstellation(c: ConstellationDef) {
+      const r = c.reveal;
+      if (r <= 0.01) {
+        for (const star of c.stars) {
+          ctx!.beginPath();
+          ctx!.arc(c.cx + star.x, c.cy + star.y, 1.5, 0, Math.PI * 2);
+          ctx!.fillStyle = "rgba(0,0,0,0.08)";
+          ctx!.fill();
+        }
+        return;
+      }
+
+      // Glow behind stars
+      for (const star of c.stars) {
+        const sx = c.cx + star.x;
+        const sy = c.cy + star.y;
+        const glow = ctx!.createRadialGradient(sx, sy, 0, sx, sy, 10 * r);
+        glow.addColorStop(0, `rgba(0,0,0,${0.08 * r})`);
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx!.beginPath();
+        ctx!.arc(sx, sy, 10 * r, 0, Math.PI * 2);
+        ctx!.fillStyle = glow;
+        ctx!.fill();
+      }
+
+      // Lines
+      ctx!.strokeStyle = `rgba(0,0,0,${0.15 * r})`;
+      ctx!.lineWidth = 1;
+      for (const [a, b] of c.lines) {
+        ctx!.beginPath();
+        ctx!.moveTo(c.cx + c.stars[a].x, c.cy + c.stars[a].y);
+        ctx!.lineTo(c.cx + c.stars[b].x, c.cy + c.stars[b].y);
+        ctx!.stroke();
+      }
+
+      // Stars (brighter)
+      for (const star of c.stars) {
+        const twinkle = Math.sin(s.time * 0.03 + star.x * 0.1 + star.y * 0.1) * 0.15;
+        ctx!.beginPath();
+        ctx!.arc(c.cx + star.x, c.cy + star.y, 1.5 + r * 1.5, 0, Math.PI * 2);
+        ctx!.fillStyle = `rgba(0,0,0,${(0.25 + twinkle) * r + 0.08 * (1 - r)})`;
+        ctx!.fill();
+      }
+
+      // Name label
+      if (r > 0.3) {
+        ctx!.font = "10px monospace";
+        ctx!.fillStyle = `rgba(0,0,0,${0.3 * Math.min(1, (r - 0.3) / 0.4)})`;
+        ctx!.fillText(c.name, c.cx - ctx!.measureText(c.name).width / 2, c.cy + 55);
+      }
+    }
+
+    function drawLens() {
+      if (!s.mouse.active) return;
+      ctx!.beginPath();
+      ctx!.arc(s.mouse.x, s.mouse.y, REVEAL_RADIUS, 0, Math.PI * 2);
+      ctx!.strokeStyle = "rgba(0,0,0,0.06)";
+      ctx!.lineWidth = 1;
+      ctx!.setLineDash([4, 6]);
+      ctx!.stroke();
+      ctx!.setLineDash([]);
+    }
+
+    function drawLabel() {
+      ctx!.font = "11px monospace";
+      ctx!.fillStyle = "rgba(0,0,0,0.35)";
+      ctx!.fillText(`PATTERNS DISCOVERED: ${s.discovered.size}/5`, 16, height - 16);
+    }
+
+    function draw() {
+      s.time++;
+      ctx!.clearRect(0, 0, width, height);
+
+      drawBgStars();
+
+      for (let i = 0; i < constellations.length; i++) {
+        const c = constellations[i];
+        const dx = s.mouse.x - c.cx;
+        const dy = s.mouse.y - c.cy;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const inRange = s.mouse.active && dist < REVEAL_RADIUS;
+
+        if (inRange) {
+          c.reveal = Math.min(1, c.reveal + 0.025);
+          if (c.reveal > 0.5) s.discovered.add(i);
+        } else {
+          c.reveal = Math.max(0, c.reveal - 0.015);
+        }
+
+        drawConstellation(c);
+      }
+
+      drawLens();
+      drawLabel();
+
+      frameRef.current = requestAnimationFrame(draw);
+    }
+
+    frameRef.current = requestAnimationFrame(draw);
+
+    return () => {
+      cancelAnimationFrame(frameRef.current);
+      canvas.removeEventListener("mousemove", handleMove);
+      canvas.removeEventListener("mouseleave", handleLeave);
+    };
+  }, [width, height]);
+
+  return <canvas ref={canvasRef} style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }} />;
+}
+
+/* ═══════════════════════════════════════════════════
+   17. Foundation → Skyscraper — a building grows from a
+   solid cross-hatched foundation upward floor by floor on
+   hover. Weak, cracked buildings wobble in the background.
+   Crane sits on top while growing.
+   ═══════════════════════════════════════════════════ */
+export function FoundationVisual({ width, height }: VisualProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const state = useRef({
+    mouse: { x: width / 2, y: height / 2, active: false },
+    growth: 0,
+    time: 0,
+    seed: Math.random() * 999,
+  });
+  const frameRef = useRef(0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    canvas.width = width;
+    canvas.height = height;
+
+    const s = state.current;
+    const maxFloors = 5;
+    const floorLabels = ["POSITIONING", "CHANNELS", "OPTIMIZATION", "SCALE", "SCALE"];
+    const groundY = height * 0.80;
+    const foundationH = height * 0.15;
+    const buildingW = width * 0.18;
+    const buildingX = width * 0.5 - buildingW / 2;
+    const floorH = (groundY - foundationH - height * 0.08) / maxFloors;
+
+    const weakBuildings = [
+      { x: width * 0.12, w: width * 0.08, h: height * 0.32, lean: 3, crackSeed: 1 },
+      { x: width * 0.24, w: width * 0.06, h: height * 0.22, lean: -4, crackSeed: 2 },
+      { x: width * 0.72, w: width * 0.07, h: height * 0.28, lean: -3, crackSeed: 3 },
+      { x: width * 0.84, w: width * 0.05, h: height * 0.18, lean: 5, crackSeed: 4 },
+    ];
+
+    function seededRandom(n: number) {
+      const v = Math.sin(s.seed + n * 127.1) * 43758.5453;
+      return v - Math.floor(v);
+    }
+
+    const handleMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      s.mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top, active: true };
+    };
+    const handleLeave = () => { s.mouse.active = false; };
+    canvas.addEventListener("mousemove", handleMove);
+    canvas.addEventListener("mouseleave", handleLeave);
+
+    function loop() {
+      if (!ctx) return;
+      ctx.clearRect(0, 0, width, height);
+      s.time += 0.016;
+
+      const targetGrowth = s.mouse.active ? maxFloors : Math.max(0, s.growth - 0.008);
+      const spd = s.mouse.active ? 0.03 : 0.008;
+      s.growth += (targetGrowth - s.growth) * spd;
+
+      // Ground line (dashed)
+      ctx.strokeStyle = "rgba(0,0,0,0.25)";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath();
+      ctx.moveTo(0, groundY);
+      ctx.lineTo(width, groundY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Weak background buildings
+      for (const wb of weakBuildings) {
+        const wobble = Math.sin(s.time * 1.2 + wb.crackSeed * 2) * 0.8;
+        const ang = ((wb.lean + wobble) * Math.PI) / 180;
+        ctx.save();
+        ctx.translate(wb.x + wb.w / 2, groundY);
+        ctx.rotate(ang);
+
+        ctx.fillStyle = "rgba(0,0,0,0.04)";
+        ctx.fillRect(-wb.w / 2, -wb.h, wb.w, wb.h);
+        ctx.strokeStyle = "rgba(0,0,0,0.15)";
+        ctx.lineWidth = 0.5;
+        ctx.strokeRect(-wb.w / 2, -wb.h, wb.w, wb.h);
+
+        ctx.strokeStyle = "rgba(0,0,0,0.18)";
+        ctx.lineWidth = 0.5;
+        for (let c = 0; c < 3; c++) {
+          const crY = -wb.h * seededRandom(wb.crackSeed * 10 + c);
+          const crX = -wb.w / 2 + wb.w * seededRandom(wb.crackSeed * 10 + c + 5);
+          ctx.beginPath();
+          ctx.moveTo(crX, crY);
+          ctx.lineTo(crX + seededRandom(wb.crackSeed + c) * 12 - 6, crY + 8 + seededRandom(wb.crackSeed + c + 1) * 10);
+          ctx.lineTo(crX + seededRandom(wb.crackSeed + c + 2) * 8 - 4, crY + 18 + seededRandom(wb.crackSeed + c + 3) * 8);
+          ctx.stroke();
+        }
+
+        for (let wy = 0; wy < 3; wy++) {
+          for (let wx = 0; wx < 2; wx++) {
+            const wX = -wb.w / 2 + 3 + wx * (wb.w / 2 - 2);
+            const wY = -wb.h + 6 + wy * (wb.h / 3.5);
+            const skew = (seededRandom(wb.crackSeed + wy * 2 + wx) - 0.5) * 3;
+            ctx.fillStyle = "rgba(0,0,0,0.08)";
+            ctx.save();
+            ctx.translate(wX + 3, wY + 3);
+            ctx.rotate((skew * Math.PI) / 180);
+            ctx.fillRect(-3, -3, 6, 6);
+            ctx.restore();
+          }
+        }
+        ctx.restore();
+      }
+
+      // Foundation (always visible)
+      const fX = buildingX - 8;
+      const fW = buildingW + 16;
+      const fY = groundY - foundationH;
+      ctx.fillStyle = "rgba(0,0,0,0.08)";
+      ctx.fillRect(fX, fY, fW, foundationH);
+      ctx.strokeStyle = "rgba(0,0,0,0.35)";
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(fX, fY, fW, foundationH);
+
+      // Cross-hatch
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(fX, fY, fW, foundationH);
+      ctx.clip();
+      ctx.strokeStyle = "rgba(0,0,0,0.12)";
+      ctx.lineWidth = 0.5;
+      const hatchSp = 8;
+      for (let hi = -(foundationH / hatchSp); hi < (fW / hatchSp) + 1; hi++) {
+        const ho = hi * hatchSp;
+        ctx.beginPath();
+        ctx.moveTo(fX + ho, fY);
+        ctx.lineTo(fX + ho - foundationH, fY + foundationH);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(fX + ho, fY + foundationH);
+        ctx.lineTo(fX + ho + foundationH, fY);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      ctx.fillStyle = "rgba(0,0,0,0.3)";
+      ctx.font = "bold 9px 'IBM Plex Mono', monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("FOUNDATION", fX + fW / 2, fY + foundationH / 2 + 3);
+
+      // Main building floors
+      const builtFloors = Math.min(maxFloors, s.growth);
+      for (let i = 0; i < Math.ceil(builtFloors); i++) {
+        const progress = Math.min(1, builtFloors - i);
+        const curFloorY = fY - (i + 1) * floorH;
+        const al = progress;
+
+        ctx.fillStyle = `rgba(0,0,0,${0.03 * al})`;
+        ctx.fillRect(buildingX, curFloorY + floorH * (1 - progress), buildingW, floorH * progress);
+        ctx.strokeStyle = `rgba(0,0,0,${0.35 * al})`;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(buildingX, curFloorY + floorH * (1 - progress), buildingW, floorH * progress);
+
+        if (progress > 0.5) {
+          const winAl = (progress - 0.5) * 2;
+          const winSz = Math.min(8, floorH * 0.35);
+          const winSpc = buildingW / 4;
+          for (let w = 0; w < 3; w++) {
+            const wxx = buildingX + winSpc * (w + 1) - winSz / 2;
+            const wyy = curFloorY + floorH * 0.35 - winSz / 2;
+            ctx.fillStyle = `rgba(0,0,0,${0.12 * winAl})`;
+            ctx.fillRect(wxx, wyy, winSz, winSz);
+            ctx.strokeStyle = `rgba(0,0,0,${0.2 * winAl})`;
+            ctx.lineWidth = 0.5;
+            ctx.strokeRect(wxx, wyy, winSz, winSz);
+          }
+          ctx.fillStyle = `rgba(0,0,0,${0.28 * winAl})`;
+          ctx.font = "bold 7px 'IBM Plex Mono', monospace";
+          ctx.textAlign = "center";
+          ctx.fillText(floorLabels[i], buildingX + buildingW / 2, curFloorY + floorH * 0.78);
+        }
+      }
+
+      // Crane
+      if (s.growth > 0.5 && s.mouse.active) {
+        const crAlpha = Math.min(1, s.growth / 2) * 0.4;
+        const topFl = Math.ceil(builtFloors);
+        const crBaseY = fY - topFl * floorH;
+        const crX = buildingX + buildingW * 0.7;
+        const crTopY = crBaseY - height * 0.1;
+        const crArmEnd = crX + width * 0.08;
+
+        ctx.strokeStyle = `rgba(0,0,0,${crAlpha})`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(crX, crBaseY);
+        ctx.lineTo(crX, crTopY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(crX - 10, crTopY);
+        ctx.lineTo(crArmEnd, crTopY);
+        ctx.stroke();
+        const cSwing = Math.sin(s.time * 2) * 3;
+        ctx.strokeStyle = `rgba(0,0,0,${crAlpha * 0.7})`;
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(crArmEnd - 5, crTopY);
+        ctx.lineTo(crArmEnd - 5 + cSwing, crTopY + 15);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(crArmEnd - 5 + cSwing, crTopY + 17, 2, 0, Math.PI, false);
+        ctx.stroke();
+      }
+
+      // Floor counter
+      ctx.fillStyle = "rgba(0,0,0,0.3)";
+      ctx.font = "bold 10px 'IBM Plex Mono', monospace";
+      ctx.textAlign = "left";
+      ctx.fillText(`FLOORS: ${Math.min(maxFloors, Math.floor(s.growth))}/${maxFloors}`, 12, height - 14);
+
+      frameRef.current = requestAnimationFrame(loop);
+    }
+    frameRef.current = requestAnimationFrame(loop);
+
+    return () => {
+      cancelAnimationFrame(frameRef.current);
+      canvas.removeEventListener("mousemove", handleMove);
+      canvas.removeEventListener("mouseleave", handleLeave);
+    };
+  }, [width, height]);
+
+  return <canvas ref={canvasRef} style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }} />;
+}
+
+/* ═══════════════════════════════════════════════════
+   18. Drafting Table — top-down blueprint being drawn
+   in real-time. Mouse movement traces a growth system
+   diagram with boxes, arrows, and architectural markings.
+   ═══════════════════════════════════════════════════ */
+export function DraftingVisual({ width, height }: VisualProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const state = useRef({
+    mouse: { x: width / 2, y: height / 2, active: false },
+    prevMouse: { x: width / 2, y: height / 2 },
+    totalDist: 0,
+    time: 0,
+  });
+  const frameRef = useRef(0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    canvas.width = width;
+    canvas.height = height;
+
+    const s = state.current;
+
+    const boxW = width * 0.13;
+    const boxH = height * 0.09;
+    const dLabels = ["AUDIENCE", "CONTENT", "DISTRIBUTION", "CONVERSION", "RETENTION"];
+    const dims = ["120px", "1.5x", "3.2x", "0.8x"];
+
+    const boxes = [
+      { x: width * 0.15, y: height * 0.25 },
+      { x: width * 0.38, y: height * 0.18 },
+      { x: width * 0.58, y: height * 0.35 },
+      { x: width * 0.38, y: height * 0.52 },
+      { x: width * 0.62, y: height * 0.62 },
+    ];
+
+    const segments: { type: "box" | "arrow" | "label"; idx: number; length: number }[] = [];
+    let totalPath = 0;
+    for (let i = 0; i < boxes.length; i++) {
+      const perim = (boxW + boxH) * 2;
+      segments.push({ type: "box", idx: i, length: perim });
+      totalPath += perim;
+      segments.push({ type: "label", idx: i, length: 20 });
+      totalPath += 20;
+      if (i < boxes.length - 1) {
+        const adx = boxes[i + 1].x - boxes[i].x;
+        const ady = boxes[i + 1].y - boxes[i].y;
+        segments.push({ type: "arrow", idx: i, length: Math.sqrt(adx * adx + ady * ady) });
+        totalPath += segments[segments.length - 1].length;
+      }
+    }
+
+    const handleMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const nx = e.clientX - rect.left;
+      const ny = e.clientY - rect.top;
+      const mdx = nx - s.prevMouse.x;
+      const mdy = ny - s.prevMouse.y;
+      s.totalDist += Math.sqrt(mdx * mdx + mdy * mdy);
+      s.prevMouse = { x: nx, y: ny };
+      s.mouse = { x: nx, y: ny, active: true };
+    };
+    const handleLeave = () => { s.mouse.active = false; };
+    canvas.addEventListener("mousemove", handleMove);
+    canvas.addEventListener("mouseleave", handleLeave);
+
+    function drawSerif(sx: number, sy: number, vert: boolean) {
+      if (!ctx) return;
+      ctx.beginPath();
+      if (vert) { ctx.moveTo(sx - 3, sy); ctx.lineTo(sx + 3, sy); }
+      else { ctx.moveTo(sx, sy - 3); ctx.lineTo(sx, sy + 3); }
+      ctx.stroke();
+    }
+
+    function loop() {
+      if (!ctx) return;
+      ctx.clearRect(0, 0, width, height);
+      s.time += 0.016;
+
+      const drawProg = Math.min(1, s.totalDist / (totalPath * 1.2));
+      const drawnLen = drawProg * totalPath;
+      const done = drawProg > 0.98;
+
+      // Grid
+      const gridSp = 20;
+      ctx.strokeStyle = "rgba(0,0,0,0.04)";
+      ctx.lineWidth = 0.5;
+      for (let gx = 0; gx < width; gx += gridSp) {
+        ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, height); ctx.stroke();
+      }
+      for (let gy = 0; gy < height; gy += gridSp) {
+        ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(width, gy); ctx.stroke();
+      }
+
+      // Edge rulers
+      ctx.strokeStyle = "rgba(0,0,0,0.12)";
+      ctx.lineWidth = 0.5;
+      for (let rx = 0; rx < width; rx += gridSp) {
+        const th = rx % (gridSp * 5) === 0 ? 8 : 4;
+        ctx.beginPath(); ctx.moveTo(rx, 0); ctx.lineTo(rx, th); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(rx, height); ctx.lineTo(rx, height - th); ctx.stroke();
+      }
+      for (let ry = 0; ry < height; ry += gridSp) {
+        const tw = ry % (gridSp * 5) === 0 ? 8 : 4;
+        ctx.beginPath(); ctx.moveTo(0, ry); ctx.lineTo(tw, ry); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(width, ry); ctx.lineTo(width - tw, ry); ctx.stroke();
+      }
+
+      // Diagram segments
+      let used = 0;
+      for (const seg of segments) {
+        if (used >= drawnLen) break;
+        const sp = Math.min(1, (drawnLen - used) / seg.length);
+        const pa = done ? 0.3 + Math.sin(s.time * 2) * 0.1 : 0.35;
+
+        if (seg.type === "box") {
+          const b = boxes[seg.idx];
+          ctx.strokeStyle = `rgba(0,0,0,${pa})`;
+          ctx.lineWidth = 1;
+          const perim = (boxW + boxH) * 2;
+          const dr = sp * perim;
+          ctx.beginPath();
+          const tl = Math.min(dr, boxW);
+          ctx.moveTo(b.x, b.y); ctx.lineTo(b.x + tl, b.y);
+          if (dr > boxW) { const rl = Math.min(dr - boxW, boxH); ctx.moveTo(b.x + boxW, b.y); ctx.lineTo(b.x + boxW, b.y + rl); }
+          if (dr > boxW + boxH) { const bl = Math.min(dr - boxW - boxH, boxW); ctx.moveTo(b.x + boxW, b.y + boxH); ctx.lineTo(b.x + boxW - bl, b.y + boxH); }
+          if (dr > boxW * 2 + boxH) { const ll = Math.min(dr - boxW * 2 - boxH, boxH); ctx.moveTo(b.x, b.y + boxH); ctx.lineTo(b.x, b.y + boxH - ll); }
+          ctx.stroke();
+          if (sp > 0.95) {
+            ctx.strokeStyle = `rgba(0,0,0,${pa * 0.8})`;
+            drawSerif(b.x, b.y, true); drawSerif(b.x + boxW, b.y, true);
+            drawSerif(b.x, b.y + boxH, true); drawSerif(b.x + boxW, b.y + boxH, true);
+          }
+        }
+
+        if (seg.type === "label") {
+          const b = boxes[seg.idx];
+          if (sp > 0.5) {
+            const la = (sp - 0.5) * 2 * (done ? (0.3 + Math.sin(s.time * 2) * 0.08) : 0.3);
+            ctx.fillStyle = `rgba(0,0,0,${la})`;
+            ctx.font = "bold 8px 'IBM Plex Mono', monospace";
+            ctx.textAlign = "center";
+            ctx.fillText(dLabels[seg.idx], b.x + boxW / 2, b.y + boxH / 2 + 3);
+          }
+        }
+
+        if (seg.type === "arrow") {
+          const fr = boxes[seg.idx];
+          const to = boxes[seg.idx + 1];
+          const asx = fr.x + boxW, asy = fr.y + boxH / 2;
+          const aex = to.x, aey = to.y + boxH / 2;
+          const adx = aex - asx, ady = aey - asy;
+          ctx.strokeStyle = `rgba(0,0,0,${pa * 0.8})`;
+          ctx.lineWidth = 0.8;
+          ctx.beginPath();
+          ctx.moveTo(asx, asy);
+          ctx.lineTo(asx + adx * sp, asy + ady * sp);
+          ctx.stroke();
+          if (sp > 0.95) {
+            const aa = Math.atan2(ady, adx);
+            const hl = 6;
+            ctx.beginPath();
+            ctx.moveTo(aex, aey);
+            ctx.lineTo(aex - hl * Math.cos(aa - 0.4), aey - hl * Math.sin(aa - 0.4));
+            ctx.moveTo(aex, aey);
+            ctx.lineTo(aex - hl * Math.cos(aa + 0.4), aey - hl * Math.sin(aa + 0.4));
+            ctx.stroke();
+            if (dims[seg.idx]) {
+              const dmx = asx + adx * 0.5, dmy = asy + ady * 0.5 - 8;
+              ctx.fillStyle = `rgba(0,0,0,${pa * 0.6})`;
+              ctx.font = "7px 'IBM Plex Mono', monospace";
+              ctx.textAlign = "center";
+              ctx.fillText(dims[seg.idx], dmx, dmy);
+            }
+          }
+        }
+        used += seg.length;
+      }
+
+      // Crosshair
+      if (s.mouse.active) {
+        ctx.strokeStyle = "rgba(0,0,0,0.08)";
+        ctx.lineWidth = 0.5;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.moveTo(s.mouse.x, 0); ctx.lineTo(s.mouse.x, height); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, s.mouse.y); ctx.lineTo(width, s.mouse.y); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.strokeStyle = "rgba(0,0,0,0.2)";
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(s.mouse.x - 8, s.mouse.y); ctx.lineTo(s.mouse.x + 8, s.mouse.y);
+        ctx.moveTo(s.mouse.x, s.mouse.y - 8); ctx.lineTo(s.mouse.x, s.mouse.y + 8);
+        ctx.stroke();
+      }
+
+      // Compass rose
+      const cpx = width - 35, cpy = 35, cpr = 12;
+      ctx.strokeStyle = "rgba(0,0,0,0.15)";
+      ctx.lineWidth = 0.5;
+      ctx.beginPath(); ctx.arc(cpx, cpy, cpr, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(cpx, cpy - cpr); ctx.lineTo(cpx, cpy + cpr);
+      ctx.moveTo(cpx - cpr, cpy); ctx.lineTo(cpx + cpr, cpy);
+      ctx.stroke();
+      ctx.fillStyle = "rgba(0,0,0,0.18)";
+      ctx.font = "bold 5px 'IBM Plex Mono', monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("N", cpx, cpy - cpr - 3);
+      ctx.fillText("S", cpx, cpy + cpr + 7);
+      ctx.fillText("E", cpx + cpr + 6, cpy + 2);
+      ctx.fillText("W", cpx - cpr - 6, cpy + 2);
+
+      // Title block
+      const tbW = width * 0.22, tbH = height * 0.08;
+      const tbX = width - tbW - 12, tbY = height - tbH - 12;
+      ctx.strokeStyle = "rgba(0,0,0,0.18)";
+      ctx.lineWidth = 0.5;
+      ctx.setLineDash([3, 3]);
+      ctx.strokeRect(tbX, tbY, tbW, tbH);
+      ctx.setLineDash([]);
+      ctx.fillStyle = "rgba(0,0,0,0.22)";
+      ctx.font = "bold 8px 'IBM Plex Mono', monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("GROWTH SYSTEM v2.0", tbX + tbW / 2, tbY + tbH / 2 + 3);
+
+      // Progress
+      ctx.fillStyle = "rgba(0,0,0,0.25)";
+      ctx.font = "9px 'IBM Plex Mono', monospace";
+      ctx.textAlign = "left";
+      ctx.fillText(`DRAWN: ${Math.round(drawProg * 100)}%`, 12, height - 14);
+
+      frameRef.current = requestAnimationFrame(loop);
+    }
+    frameRef.current = requestAnimationFrame(loop);
+
+    return () => {
+      cancelAnimationFrame(frameRef.current);
+      canvas.removeEventListener("mousemove", handleMove);
+      canvas.removeEventListener("mouseleave", handleLeave);
+    };
+  }, [width, height]);
+
+  return <canvas ref={canvasRef} style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }} />;
+}
+
+
+export function ReactorVisual({ width, height }: VisualProps) {
+  const [Scene, setScene] = useState<any>(null);
+  useEffect(() => {
+    import("./ReactorScene").then(mod => setScene(() => mod.default));
+  }, []);
+  if (!Scene) return null;
+  return <Scene width={width} height={height} />;
+}
+
+export function GearParticleVisual({ width, height }: VisualProps) {
+  const [Scene, setScene] = useState<any>(null);
+  useEffect(() => {
+    import("./GearParticleScene").then(mod => setScene(() => mod.default));
+  }, []);
+  if (!Scene) return null;
+  return <Scene width={width} height={height} />;
+}
+
+export function RocketParticleVisual({ width, height }: VisualProps) {
+  const [Scene, setScene] = useState<any>(null);
+  useEffect(() => {
+    import("./RocketParticleScene").then(mod => setScene(() => mod.default));
+  }, []);
+  if (!Scene) return null;
+  return <Scene width={width} height={height} />;
+}
+
+export function MorphVisual({ width, height }: VisualProps) {
+  const [Scene, setScene] = useState<any>(null);
+  useEffect(() => {
+    import("./MorphScene").then(mod => setScene(() => mod.default));
+  }, []);
+  if (!Scene) return null;
+  return <Scene width={width} height={height} />;
+}
+
+export function ReactorLightVisual({ width, height }: VisualProps) {
+  const [Scene, setScene] = useState<any>(null);
+  useEffect(() => {
+    import("./ReactorSceneLight").then(mod => setScene(() => mod.default));
+  }, []);
+  if (!Scene) return null;
+  return <Scene width={width} height={height} />;
+}
+
+export function GearParticleLightVisual({ width, height }: VisualProps) {
+  const [Scene, setScene] = useState<any>(null);
+  useEffect(() => {
+    import("./GearParticleSceneLight").then(mod => setScene(() => mod.default));
+  }, []);
+  if (!Scene) return null;
+  return <Scene width={width} height={height} />;
+}
+
+export function RocketParticleLightVisual({ width, height }: VisualProps) {
+  const [Scene, setScene] = useState<any>(null);
+  useEffect(() => {
+    import("./RocketParticleSceneLight").then(mod => setScene(() => mod.default));
+  }, []);
+  if (!Scene) return null;
+  return <Scene width={width} height={height} />;
+}
+
+export function MorphLightVisual({ width, height }: VisualProps) {
+  const [Scene, setScene] = useState<any>(null);
+  useEffect(() => {
+    import("./MorphSceneLight").then(mod => setScene(() => mod.default));
+  }, []);
+  if (!Scene) return null;
+  return <Scene width={width} height={height} />;
+}
+
+export function RocketMorphVisual({ width, height }: VisualProps) {
+  const [Scene, setScene] = useState<any>(null);
+  useEffect(() => {
+    import("./RocketMorphScene").then(mod => setScene(() => mod.default));
+  }, []);
+  if (!Scene) return null;
+  return <Scene width={width} height={height} />;
+}
+
+/* ═══════════════════════════════════════════════════
    Lookup map
    ═══════════════════════════════════════════════════ */
 export const heroVisuals = [
   { id: "original", label: "Original (Unicorn Studio)", component: null },
   { id: "tree", label: "1. Growing Tree", component: TreeVisual },
-  { id: "city", label: "2. City Skyline", component: CityVisual },
-  { id: "cell", label: "3. Cell Division (Spore)", component: CellVisual },
-  { id: "network", label: "4. Network Graph", component: NetworkVisual },
-  { id: "staircase", label: "5. Staircase Builder", component: StaircaseVisual },
-  { id: "snowball", label: "6. Snowball", component: SnowballVisual },
-  { id: "garden", label: "7. Garden", component: GardenVisual },
-  { id: "signal", label: "8. Signal Amplifier", component: SignalVisual },
-  { id: "blueprint", label: "9. Blueprint Unfold", component: BlueprintVisual },
-  { id: "evolution", label: "10. Evolution Chain", component: EvolutionVisual },
-  { id: "unicorn-2", label: "11. Unicorn Scene (New)", component: null },
-  { id: "tree-3d", label: "12. 3D Growing Tree", component: null },
+  { id: "cell", label: "2. Cell Division (Spore)", component: CellVisual },
+  { id: "network", label: "3. Network Graph", component: NetworkVisual },
+  { id: "snowball", label: "4. Snowball", component: SnowballVisual },
+  { id: "blueprint", label: "5. Blueprint Unfold", component: BlueprintVisual },
+  { id: "evolution", label: "6. Evolution Chain", component: EvolutionVisual },
+  { id: "machine", label: "7. Rube Goldberg Engine", component: MachineVisual },
+  { id: "circuit", label: "8. Circuit Board", component: CircuitVisual },
+  { id: "flywheel", label: "9. Flywheel", component: FlywheelVisual },
+  { id: "reactor", label: "10. Reactor (Dark)", component: ReactorVisual },
+  { id: "reactor-light", label: "11. Reactor (Light)", component: ReactorLightVisual },
+  { id: "gear-particles", label: "12. Gears (Dark)", component: GearParticleVisual },
+  { id: "gear-light", label: "13. Gears (Light)", component: GearParticleLightVisual },
+  { id: "rocket-particles", label: "14. Rocket (Dark)", component: RocketParticleVisual },
+  { id: "rocket-light", label: "15. Rocket (Light)", component: RocketParticleLightVisual },
+  { id: "morph", label: "16. Morphing (Dark)", component: MorphVisual },
+  { id: "morph-light", label: "17. Morphing (Light)", component: MorphLightVisual },
+  { id: "reactor-full", label: "18. Reactor (Full)", component: ReactorLightVisual },
+  { id: "gear-full", label: "19. Gears (Full)", component: GearParticleLightVisual },
+  { id: "rocket-full", label: "20. Rocket (Full)", component: RocketParticleLightVisual },
+  { id: "morph-full", label: "21. Morphing (Full)", component: MorphLightVisual },
+  { id: "rocket-morph", label: "22. Rocket Morph", component: RocketMorphVisual },
+  { id: "rocket-morph-full", label: "23. Rocket Morph (Full)", component: RocketMorphVisual },
+  { id: "unicorn-2", label: "18. Unicorn Scene (New)", component: null },
+  { id: "tree-3d", label: "19. 3D Growing Tree", component: null },
 ] as const;
 
 export type HeroVisualId = typeof heroVisuals[number]["id"];
