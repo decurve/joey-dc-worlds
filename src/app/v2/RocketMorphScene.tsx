@@ -257,31 +257,26 @@ function shapeGear(i: number, time: number): [number, number, number] {
   return [rx, rz + 2, geoY];
 }
 
-// Phase 3: Funnel (acquisition) — scaled down, shifted up, more particle scatter
+// Phase 3: Funnel (acquisition) — wide top tapering to narrow bottom, continuous shape
 function shapeFunnel(i: number, time: number): [number, number, number] {
   const norm = i / COUNT;
   const s = 0.65; // shrink factor
   const yUp = 4.5; // push up
   // Per-particle jitter for a more scattered, particle-y feel
-  const jx = (hash(i + 200) - 0.5) * 1.8;
-  const jy = (hash(i + 300) - 0.5) * 1.2;
-  const jz = (hash(i + 600) - 0.5) * 1.8;
-  if (norm < 0.92) {
-    const t = norm / 0.92;
-    const funnelRadius = (15 - 13 * t) * s;
-    const spiralAngle = t * Math.PI * 2 * 20 + time * 3;
-    const x = Math.cos(spiralAngle) * funnelRadius + jx;
-    const z = Math.sin(spiralAngle) * funnelRadius + jz;
-    const y = (15 - 30 * t) * s + yUp + jy;
-    return [x, y, z];
-  } else {
-    const dripNorm = (norm - 0.92) / 0.08;
-    const dripT = (dripNorm + time * 0.5) % 1.0;
-    const x = (hash(i + 400) - 0.5) * 4 * s + jx;
-    const z = (hash(i + 500) - 0.5) * 4 * s + jz;
-    const y = (-15 - dripT * 10) * s + yUp + jy;
-    return [x, y, z];
-  }
+  const jx = (hash(i + 200) - 0.5) * 1.4;
+  const jy = (hash(i + 300) - 0.5) * 1.0;
+  const jz = (hash(i + 600) - 0.5) * 1.4;
+
+  // Continuous funnel: wide rim at top, tapering to a narrow spout at the bottom
+  const t = norm; // 0 = top, 1 = bottom
+  // Radius: wide at top (14), narrows to a small opening (1.5) at bottom
+  const funnelRadius = (14 * (1 - t * t) + 1.5 * t * t) * s;
+  const spiralAngle = t * Math.PI * 2 * 18 + time * 2.5;
+  const x = Math.cos(spiralAngle) * funnelRadius + jx;
+  const z = Math.sin(spiralAngle) * funnelRadius + jz;
+  // Height: top of funnel to bottom, continuous
+  const y = (14 - 28 * t) * s + yUp + jy;
+  return [x, y, z];
 }
 
 // Phase 4: Torus (retention loop)
