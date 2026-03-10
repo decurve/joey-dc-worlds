@@ -475,7 +475,14 @@ function RocketLabel3D({
 function RocketLabels({ visible, phaseTimeRef }: { visible: boolean; phaseTimeRef: React.MutableRefObject<number> }) {
   const groupRef = useRef<THREE.Group>(null);
   const opacityRef = useRef(1);
+  const prevVisibleRef = useRef(false);
   const [, forceRender] = useState(0);
+
+  // Reset opacity when labels become visible again (new rocket phase)
+  if (visible && !prevVisibleRef.current) {
+    opacityRef.current = 1;
+  }
+  prevVisibleRef.current = visible;
 
   useFrame((state) => {
     if (!groupRef.current) return;
