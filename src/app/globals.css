@@ -463,6 +463,27 @@ html {
     );
 }
 
+/* ─── Section Tag Small — compact variant for inline use ─── */
+.section-tag-sm {
+  display: inline-flex;
+  font-family: var(--font-mono-ui, ui-monospace, monospace);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.55);
+  padding: 1px 6px;
+  border: 1px dashed rgba(0, 0, 0, 0.25);
+  border-radius: 3px;
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 3px,
+      rgba(0, 0, 0, 0.05) 3px,
+      rgba(0, 0, 0, 0.05) 4px
+    );
+}
+
 /* ─── Program Row Hover — diagonal stripes ─── */
 .program-row-hover {
   background-image: none;
@@ -518,9 +539,14 @@ html {
   100%  { content: "◇"; }
 }
 .diamond-cycle {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: 8px;
   line-height: 1;
+  width: 8px;
+  height: 8px;
+  vertical-align: middle;
 }
 .diamond-cycle::before {
   content: "◇";

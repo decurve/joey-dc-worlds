@@ -86,6 +86,40 @@ const newsletterStats = [
   { value: "Weekly", label: "Every Tuesday" },
 ];
 
+const fadingLines = [
+  { y: 0, opacity: 0.10 },
+  { y: 3, opacity: 0.09 },
+  { y: 7, opacity: 0.08 },
+  { y: 12, opacity: 0.07 },
+  { y: 18, opacity: 0.06 },
+  { y: 25, opacity: 0.05 },
+  { y: 33, opacity: 0.04 },
+  { y: 42, opacity: 0.03 },
+  { y: 52, opacity: 0.02 },
+  { y: 59, opacity: 0.01 },
+];
+
+function FadingLines() {
+  return (
+    <>
+      <div className="relative" style={{ height: 60, minHeight: 40, width: "100vw", marginLeft: "calc(-50vw + 50%)" }}>
+        {fadingLines.map((line, i) => (
+          <div
+            key={i}
+            className="absolute left-0 right-0"
+            style={{
+              top: line.y,
+              height: 1,
+              backgroundColor: `rgba(0,0,0,${line.opacity})`,
+            }}
+          />
+        ))}
+      </div>
+      <div style={{ height: 40 }} />
+    </>
+  );
+}
+
 export default function V2Page() {
   return (
     <HeroVisualProvider>
@@ -147,32 +181,7 @@ export default function V2Page() {
           </GridOverlay>
         </div>
 
-        {/* Fading lines under marquee — full viewport width */}
-        <div className="relative" style={{ height: 60, minHeight: 40, width: "100vw", marginLeft: "calc(-50vw + 50%)" }}>
-          {[
-            { y: 0, opacity: 0.10 },
-            { y: 3, opacity: 0.09 },
-            { y: 7, opacity: 0.08 },
-            { y: 12, opacity: 0.07 },
-            { y: 18, opacity: 0.06 },
-            { y: 25, opacity: 0.05 },
-            { y: 33, opacity: 0.04 },
-            { y: 42, opacity: 0.03 },
-            { y: 52, opacity: 0.02 },
-            { y: 59, opacity: 0.01 },
-          ].map((line, i) => (
-            <div
-              key={i}
-              className="absolute left-0 right-0"
-              style={{
-                top: line.y,
-                height: 1,
-                backgroundColor: `rgba(0,0,0,${line.opacity})`,
-              }}
-            />
-          ))}
-        </div>
-        <div style={{ height: 40 }} />
+        <FadingLines />
 
         {/* Padded content below hero */}
         <div className="px-6">
@@ -287,7 +296,7 @@ export default function V2Page() {
               ))}
 
               <a href="/v2/services" className="rainbow-row-hover p-4 md:p-8 font-mono-ui text-xs text-neutral-400 hover:text-black transition-colors flex items-center gap-2">
-                <span className="font-semibold text-black">Explore all programs (8)</span>
+                <span className="font-semibold text-black">Explore all programs</span>
                 <ArrowRight className="w-4 h-4 text-black" />
               </a>
             </div>
@@ -484,7 +493,7 @@ export default function V2Page() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       {recentNewsletters.slice(1, 3).map((item, i) => (
-                        <div key={i} className="border border-black/10 p-3">
+                        <div key={i} className="border border-black/10 p-3 hover:border-black/25 hover:bg-black/[0.02] transition-all cursor-pointer">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="font-mono-ui text-[9px] text-neutral-400">{item.number}</span>
                             <span className="w-1 h-1 bg-neutral-300 rounded-full" />
@@ -499,12 +508,12 @@ export default function V2Page() {
                     {/* More editions in dense list */}
                     <div className="mt-4">
                       {recentNewsletters.slice(3).map((item, i) => (
-                        <div key={i} className="flex items-center justify-between py-2 border-b border-black/10 last:border-b-0">
+                        <div key={i} className="flex items-center justify-between py-2.5 px-2 -mx-2 border-b border-black/10 last:border-b-0 rounded-sm hover:bg-black/[0.03] transition-colors cursor-pointer">
                           <div className="flex items-center gap-2">
                             <span className="font-mono-ui text-[9px] text-neutral-400">{item.number}</span>
                             <span className="text-sm font-medium">{item.title}</span>
                           </div>
-                          <span className="section-tag" style={{ display: "inline-flex", fontSize: 8, padding: "1px 6px" }}>{item.type}</span>
+                          <span className="section-tag-sm">{item.type}</span>
                         </div>
                       ))}
                     </div>
@@ -514,9 +523,9 @@ export default function V2Page() {
                   <div className="md:col-span-2 p-6">
                     <h3 className="font-heading text-xl tracking-tight mb-2">Never miss an edition</h3>
                     <p className="text-sm text-neutral-500 font-light leading-relaxed mb-6">Growth systems, tactics, and insights. Delivered straight from the frontier every Tuesday.</p>
-                    <div className="space-y-3 mb-4">
-                      <input type="email" placeholder="your@email.com" className="w-full border border-black/15 rounded-sm px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-black/20 placeholder:text-neutral-400" />
-                      <button className="w-full bg-black text-white py-2.5 rounded-sm hover:bg-neutral-800 transition-colors text-sm font-medium">Subscribe — Free</button>
+                    <div className="space-y-2 mb-4">
+                      <input type="email" placeholder="your@email.com" className="w-full border border-black/15 rounded-sm px-3 py-2.5 text-sm bg-white focus:outline-none focus:border-black/40 focus:ring-1 focus:ring-black/10 placeholder:text-neutral-400 transition-colors" />
+                      <button className="w-full bg-black text-white py-2.5 rounded-sm hover:bg-neutral-800 active:bg-neutral-900 active:scale-[0.99] transition-all text-sm font-medium">Subscribe — Free</button>
                     </div>
                     <p className="text-[10px] text-neutral-400 mb-6">No spam. Unsubscribe anytime.</p>
 
@@ -559,39 +568,14 @@ export default function V2Page() {
           </div>
         </section>
 
-        {/* Fading lines between newsletter and pre-footer — full viewport width */}
-        <div className="relative" style={{ height: 60, minHeight: 40, width: "100vw", marginLeft: "calc(-50vw + 50%)" }}>
-          {[
-            { y: 0, opacity: 0.10 },
-            { y: 3, opacity: 0.09 },
-            { y: 7, opacity: 0.08 },
-            { y: 12, opacity: 0.07 },
-            { y: 18, opacity: 0.06 },
-            { y: 25, opacity: 0.05 },
-            { y: 33, opacity: 0.04 },
-            { y: 42, opacity: 0.03 },
-            { y: 52, opacity: 0.02 },
-            { y: 59, opacity: 0.01 },
-          ].map((line, i) => (
-            <div
-              key={i}
-              className="absolute left-0 right-0"
-              style={{
-                top: line.y,
-                height: 1,
-                backgroundColor: `rgba(0,0,0,${line.opacity})`,
-              }}
-            />
-          ))}
-        </div>
-        <div style={{ height: 40 }} />
+        <FadingLines />
 
         {/* 9. PRE-FOOTER */}
-        <section className="grid grid-cols-1 md:grid-cols-2 min-h-[400px]">
-          <div className="p-8 md:p-12 border-r border-black/10 flex flex-col justify-between">
+        <section className="grid grid-cols-1 md:grid-cols-5 min-h-[400px]">
+          <div className="md:col-span-3 p-8 md:p-12 md:pr-16 border-r border-black/10 flex flex-col justify-between">
             <div>
               <div className="section-tag mb-6">Start Building</div>
-              <h3 className="font-heading text-3xl font-light leading-snug max-w-md">
+              <h3 className="font-heading text-3xl md:text-4xl font-light leading-snug max-w-lg">
                 Whether you want us to build your growth system or you want to build it yourself — we&apos;ve got you covered.
               </h3>
             </div>
@@ -604,10 +588,10 @@ export default function V2Page() {
               </a>
             </div>
           </div>
-          <div className="grid grid-rows-2 divide-y divide-black/10">
-            <div className="p-8 md:p-12">
+          <div className="md:col-span-2 grid grid-rows-2 divide-y divide-black/10">
+            <div className="p-8 md:p-10">
               <div className="section-tag mb-6">Social</div>
-              <div className="flex gap-4 text-xs font-mono-ui uppercase">
+              <div className="flex flex-wrap gap-3 text-xs font-mono-ui uppercase">
                 <a href="#" className="border border-black/10 px-2 py-1 hover:bg-black hover:text-white transition-colors">
                   LinkedIn
                 </a>
@@ -619,9 +603,9 @@ export default function V2Page() {
                 </a>
               </div>
             </div>
-            <div className="p-8 md:p-12">
+            <div className="p-8 md:p-10">
               <div className="section-tag mb-6">Resources</div>
-              <div className="flex gap-4 text-xs font-mono-ui uppercase">
+              <div className="flex flex-wrap gap-3 text-xs font-mono-ui uppercase">
                 <a href="/v2/growth-program" className="border border-black/10 px-2 py-1 hover:bg-black hover:text-white transition-colors">
                   Growth Program
                 </a>
@@ -634,8 +618,8 @@ export default function V2Page() {
         </section>
 
         {/* 10. FOOTER — small links */}
-        <footer className="border-t border-black/10 pt-8 pb-4">
-          <div className="flex justify-between items-end mb-8 font-mono-ui text-xs text-neutral-500 uppercase">
+        <footer className="border-t border-black/10 pt-8 pb-8">
+          <div className="flex justify-between items-end font-mono-ui text-xs text-neutral-500 uppercase">
             <div className="flex items-center gap-4">
               <div className="w-4 h-4 rounded-full border border-black/20 flex items-center justify-center">
                 <span className="text-[8px] font-serif font-bold">D</span>
