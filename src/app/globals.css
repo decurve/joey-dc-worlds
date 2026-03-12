@@ -52,6 +52,31 @@ html {
   scroll-behavior: smooth;
 }
 
+h1, h2, h3, h4, h5, h6, p, li, blockquote, figcaption {
+  text-wrap: pretty;
+}
+
+/* Arrow icons slide right on hover */
+.glow-btn svg, .rainbow-hover svg {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.glow-btn:hover svg, .rainbow-hover:hover svg {
+  transform: translateX(3px);
+}
+/* Optical alignment — trailing icons in CTAs */
+.glow-btn svg, .rainbow-hover svg {
+  margin-right: -2px;
+}
+
+/* Dropdown entrance/exit */
+@keyframes dropdown-in {
+  from { opacity: 0; transform: translateY(-8px); filter: blur(2px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+.dropdown-animate {
+  animation: dropdown-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 /* Light world selection */
 ::selection {
   background: #0a0a0a;
@@ -191,10 +216,10 @@ html {
   background: linear-gradient(to bottom, #222 0%, #0a0a0a 100%);
   color: #ffffff;
   border-top: 1px solid rgba(255, 255, 255, 0.45);
+  overflow: visible !important;
   box-shadow:
     0 0 0 1px rgba(0, 0, 0, 0.8),
-    0 0 20px 4px rgba(0, 0, 0, 0.25),
-    0 0 40px 8px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.15),
     inset 0 1px 4px rgba(255, 255, 255, 0.25),
     inset 0 -1px 2px rgba(0, 0, 0, 0.5);
   transition:
@@ -203,16 +228,54 @@ html {
     border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
     transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
+.glow-btn::after {
+  content: '';
+  position: absolute;
+  top: -100%;
+  left: 0;
+  right: 0;
+  height: 200%;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 2px,
+    rgba(255, 255, 255, 0.03) 2px,
+    rgba(255, 255, 255, 0.03) 4px
+  );
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: 20;
+}
+@keyframes scanline-move {
+  to { transform: translateY(50%); }
+}
+.glow-btn:hover::after {
+  opacity: 1;
+  animation: scanline-move 2s linear infinite;
+}
+.glow-btn::before {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border: 1px dashed rgba(0, 0, 0, 0);
+  border-radius: 10px;
+  transition: border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+  z-index: 20;
+}
+.glow-btn:hover::before {
+  border-color: rgba(0, 0, 0, 0.2);
+}
 .glow-btn:hover {
   background: linear-gradient(to bottom, #2a2a2a 0%, #151515 100%);
-  border-top-color: rgba(255, 255, 255, 0.55);
+  border-top-color: rgba(255, 255, 255, 0.5);
   box-shadow:
     0 0 0 1px rgba(0, 0, 0, 0.8),
-    0 0 30px 8px rgba(0, 0, 0, 0.3),
-    0 0 60px 16px rgba(0, 0, 0, 0.12),
-    inset 0 1px 6px rgba(255, 255, 255, 0.3),
+    0 0 12px 2px rgba(0, 0, 0, 0.15),
+    inset 0 1px 4px rgba(255, 255, 255, 0.25),
     inset 0 -1px 2px rgba(0, 0, 0, 0.5);
-  transform: scale(1.02) translateY(-1px);
+  transform: none;
 }
 .glow-btn:active {
   transform: scale(0.98) translateY(0px);

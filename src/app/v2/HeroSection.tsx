@@ -13,6 +13,7 @@ import dynamic from "next/dynamic";
 import { ArrowRight, Building2, Users, Crown, Clock, Rocket } from "lucide-react";
 import gsap from "gsap";
 import { useHeroVisual } from "./HeroVisualContext";
+import GlowButton from "./GlowButton";
 import { heroVisuals } from "./HeroVisuals";
 
 const UnicornScene = dynamic(() => import("unicornstudio-react/next"), { ssr: false });
@@ -156,44 +157,7 @@ function GlitchWord() {
   return <span ref={textRef} style={{ display: "inline", overflow: "hidden", whiteSpace: "nowrap" }}>Systems</span>;
 }
 
-/* ─── Sparkle Button ─── */
-function GlowButton({ href, children }: { href: string; children: React.ReactNode }) {
-  const btnRef = useRef<HTMLAnchorElement>(null);
-  const [sparkles, setSparkles] = useState<{ id: number; x: number; y: number; delay: number }[]>([]);
-
-  useEffect(() => {
-    const count = 6;
-    const initial = Array.from({ length: count }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      delay: Math.random() * 3,
-    }));
-    setSparkles(initial);
-  }, []);
-
-  return (
-    <a
-      ref={btnRef}
-      href={href}
-      className="glow-btn relative px-6 py-3 rounded-md font-medium text-sm flex items-center gap-2 overflow-hidden"
-    >
-      <span className="glow-btn-aura" />
-      {sparkles.map((s) => (
-        <span
-          key={s.id}
-          className="sparkle-dot"
-          style={{
-            left: `${s.x}%`,
-            top: `${s.y}%`,
-            animationDelay: `${s.delay}s`,
-          }}
-        />
-      ))}
-      <span className="relative z-10 flex items-center gap-2">{children}</span>
-    </a>
-  );
-}
+/* GlowButton imported from ./GlowButton */
 
 export default function HeroSection() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -268,7 +232,7 @@ export default function HeroSection() {
             <span className="font-mono-ui text-[10px] uppercase tracking-widest text-neutral-500 bg-neutral-100 border border-dashed border-neutral-300 rounded px-2.5 py-1">YC-Backed</span>
           </div>
           <div className="flex flex-wrap items-center gap-4 mb-4">
-            <GlowButton href="/v2/services">
+            <GlowButton href="/v2/services" className="px-6 py-3">
               Explore the Growth Studio <ArrowRight className="w-4 h-4" />
             </GlowButton>
             <a
@@ -522,7 +486,7 @@ export default function HeroSection() {
           {/* CTA */}
           <div className="pointer-events-auto" style={{ maxWidth: leftContentWidth || undefined }}>
             <div className="flex flex-wrap items-center gap-4">
-              <GlowButton href="/v2/services">
+              <GlowButton href="/v2/services" className="px-6 py-3">
                 Explore the Growth Studio <ArrowRight className="w-4 h-4" />
               </GlowButton>
               <a

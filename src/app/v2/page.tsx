@@ -5,6 +5,7 @@ import V2Nav from "./V2Nav";
 import GridOverlay from "./GridOverlay";
 import HeroSection from "./HeroSection";
 import GrowthProgramWindow from "./GrowthProgramWindow";
+import GlowButton from "./GlowButton";
 import { HeroVisualProvider } from "./HeroVisualContext";
 import MassiveTypeScroll from "./MassiveTypeScroll";
 
@@ -317,9 +318,9 @@ export default function V2Page() {
               50+ playbooks, frameworks, and execution guides. An AI co-pilot that knows your business. Everything you need to build a growth system yourself — at your own pace.
             </p>
             <div className="flex flex-wrap items-center gap-4 mt-6">
-              <a href="/v2/growth-program" className="glow-btn relative px-6 py-3 rounded-md font-medium text-sm flex items-center gap-2 overflow-hidden">
-                <span className="relative z-10 flex items-center gap-2">Explore the Growth Program <ArrowRight className="w-4 h-4" /></span>
-              </a>
+              <GlowButton href="/v2/growth-program" className="px-6 py-3">
+                Explore the Growth Program <ArrowRight className="w-4 h-4" />
+              </GlowButton>
               <a href="#" className="rainbow-hover text-sm font-medium flex items-center gap-2 hover:text-black transition-colors">
                 Start with a 7-day free trial <ArrowRight className="w-4 h-4" />
               </a>
@@ -525,7 +526,9 @@ export default function V2Page() {
                     <p className="text-sm text-neutral-500 font-light leading-relaxed mb-6">Growth systems, tactics, and insights. Delivered straight from the frontier every Tuesday.</p>
                     <div className="space-y-2 mb-4">
                       <input type="email" placeholder="your@email.com" className="w-full border border-black/15 rounded-sm px-3 py-2.5 text-sm bg-white focus:outline-none focus:border-black/40 focus:ring-1 focus:ring-black/10 placeholder:text-neutral-400 transition-colors" />
-                      <button className="w-full bg-black text-white py-2.5 rounded-sm hover:bg-neutral-800 active:bg-neutral-900 active:scale-[0.99] transition-all text-sm font-medium">Subscribe — Free</button>
+                      <GlowButton as="button" className="w-full py-2.5">
+                        Subscribe — Free
+                      </GlowButton>
                     </div>
                     <p className="text-[10px] text-neutral-400 mb-6">No spam. Unsubscribe anytime.</p>
 
@@ -534,7 +537,7 @@ export default function V2Page() {
                       {newsletterStats.map((s) => (
                         <div key={s.label} className="flex items-center justify-between">
                           <span className="font-mono-ui text-[10px] text-neutral-400 uppercase tracking-widest">{s.label}</span>
-                          <span className="font-heading text-lg">{s.value}</span>
+                          <span className="font-heading text-lg tabular-nums">{s.value}</span>
                         </div>
                       ))}
                     </div>
@@ -580,9 +583,9 @@ export default function V2Page() {
               </h3>
             </div>
             <div className="mt-12 flex items-center gap-6">
-              <a href="/v2/services" className="glow-btn relative px-6 py-2.5 rounded-md text-sm font-medium overflow-hidden inline-flex items-center justify-center shrink-0">
-                <span className="relative z-10">Talk to the Growth Studio</span>
-              </a>
+              <GlowButton href="/v2/services" className="px-6 py-2.5">
+                Talk to the Growth Studio
+              </GlowButton>
               <a href="/v2/growth-program" className="inline-flex items-center gap-1.5 text-sm font-medium text-neutral-500 hover:text-black transition-colors rainbow-hover shrink-0">
                 Explore the Growth Program <ArrowRight className="w-3.5 h-3.5" />
               </a>

@@ -295,8 +295,10 @@ export default function GrowthProgramWindow() {
                   : "text-neutral-400 hover:text-black"
               }`}
             >
-              <Icon className={`w-3 h-3 inline-block mr-1.5 ${isActive ? "opacity-40" : "opacity-30"}`} />
-              {tab.label}
+              <span className="flex items-center gap-2">
+                <Icon className={`w-3 h-3 shrink-0 ${isActive ? "opacity-40" : "opacity-30"}`} />
+                {tab.label}
+              </span>
             </button>
           );
         })}

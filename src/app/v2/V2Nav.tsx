@@ -3,6 +3,7 @@
 import { Search, ArrowUpRight, ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useHeroVisual } from "./HeroVisualContext";
+import GlowButton from "./GlowButton";
 import { heroVisuals } from "./HeroVisuals";
 import type { HeroVisualId } from "./HeroVisuals";
 
@@ -109,7 +110,7 @@ function HeroVisualDropdown() {
       </button>
       {open && (
         <div
-          className="absolute right-0 top-full mt-2 w-64 border border-black/10 bg-[#f9f9f8]/95 backdrop-blur-sm shadow-lg z-50"
+          className="absolute right-0 top-full mt-2 w-64 border border-black/10 bg-[#f9f9f8]/95 backdrop-blur-sm shadow-lg z-50 dropdown-animate"
           style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}
         >
           <div className="px-3 py-2 border-b border-black/10 font-mono-ui text-[10px] uppercase tracking-widest text-neutral-400">
@@ -212,15 +213,9 @@ export default function V2Nav({ currentPage, variant = "light" }: V2NavProps) {
             <HeroVisualDropdown />
             <a
               href="#"
-              className="nav-pill text-white transition-colors v2-nav-hover"
-              style={{
-                background: "rgba(0, 0, 0, 0.75)",
-                backdropFilter: "blur(8px)",
-                WebkitBackdropFilter: "blur(8px)",
-                borderColor: "rgba(0, 0, 0, 0.3)",
-              }}
+              className="nav-pill glow-btn relative text-white transition-colors"
             >
-              CONTACT
+              <span className="relative z-10">CONTACT</span>
             </a>
           </>
         )}
