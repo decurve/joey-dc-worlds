@@ -86,11 +86,11 @@ type ViewId =
 /* ─── Data ─── */
 
 const featuredResources = [
-  { tag: "Skill", color: "bg-white/[0.08] text-white border-white/[0.15]", title: "Story Systems", desc: "Build your brand's master messaging hub — positioning, value props, and copy hooks.", icon: MessageSquare },
-  { tag: "Skill", color: "bg-white/[0.08] text-white border-white/[0.15]", title: "Growth Strategy", desc: "Your master growth playbook — channels, funnels, unit economics, and compounding motions.", icon: BarChart3 },
-  { tag: "SOP", color: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20", title: "Cold Outreach", desc: "The exact process to book 50+ qualified calls per month.", icon: Mail },
-  { tag: "Playbook", color: "bg-violet-500/10 text-violet-400 border-violet-500/20", title: "Above the Fold", desc: "The most important real estate on your page — the 5-component framework.", icon: Eye },
-  { tag: "Newsletter", color: "bg-teal-500/10 text-teal-400 border-teal-500/20", title: "Welcome to the Frontier", desc: "#314 — New era of tactical + strategic growth intelligence.", icon: Mail },
+  { tag: "Skill", color: "bg-white/[0.08] text-white border-white/[0.15]", title: "Story Systems", desc: "Build your brand's master messaging hub — positioning, value props, and copy hooks.", icon: MessageSquare, image: "/frontier/story-systems.png" },
+  { tag: "Skill", color: "bg-white/[0.08] text-white border-white/[0.15]", title: "Growth Strategy", desc: "Your master growth playbook — channels, funnels, unit economics, and compounding motions.", icon: BarChart3, image: "/frontier/growth-strategy.png" },
+  { tag: "SOP", color: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20", title: "Cold Outreach", desc: "The exact process to book 50+ qualified calls per month.", icon: Mail, image: "/frontier/cold-outreach.png" },
+  { tag: "Playbook", color: "bg-violet-500/10 text-violet-400 border-violet-500/20", title: "Above the Fold", desc: "The most important real estate on your page — the 5-component framework.", icon: Eye, image: "/frontier/above-the-fold.png" },
+  { tag: "Newsletter", color: "bg-teal-500/10 text-teal-400 border-teal-500/20", title: "Welcome to the Frontier", desc: "#314 — New era of tactical + strategic growth intelligence.", icon: Mail, image: "/frontier/welcome-frontier.png" },
 ];
 
 const claudeSkills = [
@@ -369,9 +369,14 @@ export default function FrontierPage() {
   };
 
   /* Floppy Disk card wrapper */
-  const FloppyCard = ({ type, children, onClick }: { type?: string; children: React.ReactNode; onClick?: () => void }) => (
+  const FloppyCard = ({ type, image, children, onClick }: { type?: string; image?: string; children: React.ReactNode; onClick?: () => void }) => (
     <div className="floppy group" onClick={onClick}>
       <div className="floppy-scan" />
+      {image && (
+        <div className="w-full aspect-[16/10] overflow-hidden bg-black">
+          <img src={image} alt="" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+        </div>
+      )}
       <div className="floppy-slider">
         {type && <span className="text-[8px] tracking-[0.2em] uppercase text-white/20">{type}</span>}
       </div>
@@ -669,6 +674,7 @@ export default function FrontierPage() {
                         <FloppyCard
                           key={r.title}
                           type={r.tag}
+                          image={r.image}
                           onClick={() => navigate(targetView, sub)}
                         >
                           <button
