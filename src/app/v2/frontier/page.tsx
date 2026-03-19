@@ -702,11 +702,11 @@ export default function FrontierPage() {
                     <h2 className="text-sm font-medium text-white tracking-wide uppercase">Learning Paths</h2>
                   </div>
                   <div className="grid md:grid-cols-2 gap-4">
-                    <FloppyCard type="PATH 01">
+                    <FloppyCard type="PATH 01" image="/frontier/path-story-systems.png">
                       <h3 className="font-heading text-base mb-2 text-white tracking-tight">Story Systems Path</h3>
                       <p className="text-[10px] text-neutral-500 leading-relaxed">Messaging foundation &rarr; Launch. Build your complete brand story system.</p>
                     </FloppyCard>
-                    <FloppyCard type="PATH 02">
+                    <FloppyCard type="PATH 02" image="/frontier/path-cold-outreach.png">
                       <h3 className="font-heading text-base mb-2 text-white tracking-tight">Cold Outreach Mastery</h3>
                       <p className="text-[10px] text-neutral-500 leading-relaxed">Email templates &rarr; Sales execution. Book 50+ calls per month.</p>
                     </FloppyCard>
