@@ -298,8 +298,8 @@ export default function GrowthProgramWindow() {
       {/* Title bar — macOS dots + spec label */}
       <div className="flex items-center gap-3 px-4 py-2.5 border-b border-black/10 bg-neutral-50 relative z-30">
         <div className="flex gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57] cursor-pointer hover:brightness-90" onClick={() => setShowGame(false)} />
-          <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
+          <button type="button" aria-label="Close game" className="w-2.5 h-2.5 rounded-full bg-[#ff5f57] cursor-pointer hover:brightness-90" onClick={() => setShowGame(false)} />
+          <span className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" aria-hidden="true" />
           <button className="w-2.5 h-2.5 rounded-full bg-[#28c840] cursor-pointer hover:brightness-90" onClick={() => setShowGame(!showGame)} />
         </div>
         <span className="font-mono-ui text-[10px] text-neutral-400 ml-1">
@@ -342,7 +342,7 @@ export default function GrowthProgramWindow() {
       {filteredItems.map((item, i) => (
         <div
           key={`${item.title}-${i}`}
-          className="flex items-center border-b border-black/10 px-6 py-5 group program-row-hover cursor-pointer transition-colors"
+          className="flex items-center border-b border-black/10 px-6 py-5 group program-row-hover transition-colors"
         >
           <div className="w-28 shrink-0 text-xs font-mono-ui flex items-center gap-2.5">
             <span className="gp-square" style={{ animationDelay: `${i * 0.4}s` }} />

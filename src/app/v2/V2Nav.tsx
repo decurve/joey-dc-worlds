@@ -103,6 +103,8 @@ function HeroVisualDropdown() {
     <div ref={ref} className="relative hidden md:block">
       <button
         onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-haspopup="listbox"
         className="nav-pill flex items-center gap-1.5 transition-colors v2-nav-hover hover:text-black"
       >
         <span className="opacity-40">[V]</span> VISUAL
@@ -137,18 +139,20 @@ function HeroVisualDropdown() {
 type V2NavProps = {
   currentPage?: string;
   variant?: "light" | "dark";
+  minimal?: boolean;
+  searchSlot?: React.ReactNode;
 };
 
-export default function V2Nav({ currentPage, variant = "light" }: V2NavProps) {
+export default function V2Nav({ currentPage, variant = "light", minimal = false, searchSlot }: V2NavProps) {
   const isDark = variant === "dark";
 
   const pillClass = isDark ? "v2-nav-pill-dark" : "nav-pill";
   const hoverClass = isDark ? "v2-nav-hover-dark" : "v2-nav-hover";
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50">
     <nav
-      className={`flex items-center font-mono-ui text-xs tracking-wide ${
+      aria-label="Primary navigation"
+      className={`fixed top-0 left-0 right-0 z-50 flex items-center font-mono-ui text-xs tracking-wide ${
         isDark ? "text-neutral-400" : "text-neutral-600"
       }`}
       style={{ padding: "12px 24px" }}
@@ -161,10 +165,10 @@ export default function V2Nav({ currentPage, variant = "light" }: V2NavProps) {
             isDark ? "text-white" : "text-black"
           }`}
         >
-          <div className={`w-3 h-3 rounded-full ${isDark ? "bg-white" : "bg-black"}`} /> DC
+          <span className={`w-3 h-3 rounded-full ${isDark ? "bg-white" : "bg-black"}`} aria-hidden="true" /> DC
         </a>
 
-        <div className="hidden md:flex gap-3">
+        {!minimal && <div className="hidden md:flex gap-3">
           {navLinks.map((link) => {
             const isActive = currentPage === link.label;
             const activeColor = isDark ? "text-white" : "text-black";
@@ -173,6 +177,7 @@ export default function V2Nav({ currentPage, variant = "light" }: V2NavProps) {
               <a
                 key={link.key}
                 href={link.href}
+                aria-current={isActive ? "page" : undefined}
                 className={`${pillClass} transition-colors ${
                   isActive ? activeColor : `${hoverClass} ${isDark ? "hover:text-white" : "hover:text-black"}`
                 }`}
@@ -182,7 +187,7 @@ export default function V2Nav({ currentPage, variant = "light" }: V2NavProps) {
               </a>
             );
           })}
-        </div>
+        </div>}
       </div>
 
       <div className="flex-1" />
@@ -191,17 +196,7 @@ export default function V2Nav({ currentPage, variant = "light" }: V2NavProps) {
       <div className="flex items-center gap-3 shrink-0">
         {isDark && (
           <>
-            <div className="relative w-64 hidden md:block">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-500" />
-              <input
-                type="text"
-                placeholder="Search..."
-                className="w-full bg-white/[0.06] border border-white/[0.12] rounded-md py-1.5 pl-9 pr-8 text-xs text-white placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-white/15 focus:border-white/15 transition-all"
-              />
-              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1 py-0.5 rounded border border-white/[0.08] text-[9px] text-neutral-500">
-                /
-              </div>
-            </div>
+            {searchSlot}
             <button className="bg-white text-black px-3 py-1.5 rounded-md hover:bg-neutral-200 transition-colors text-xs font-medium border border-white">
               Join The Frontier
             </button>
@@ -221,6 +216,5 @@ export default function V2Nav({ currentPage, variant = "light" }: V2NavProps) {
         )}
       </div>
     </nav>
-    </div>
   );
 }

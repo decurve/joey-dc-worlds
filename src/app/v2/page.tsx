@@ -280,9 +280,9 @@ export default function V2Page() {
             {/* Right scrolling column — rows with dividers and stripe hover */}
             <div className="flex-1">
               {programs.map((program) => (
-                <div
+                <article
                   key={program.name}
-                  className="border-b border-black/10 p-6 md:px-8 md:py-10 group program-row-hover cursor-pointer transition-colors"
+                  className="border-b border-black/10 p-6 md:px-8 md:py-10 group program-row-hover transition-colors"
                 >
                   <div className="flex items-center gap-3 mb-3">
                     <span className="font-mono-ui text-xs text-neutral-400">{program.number}</span>
@@ -293,7 +293,7 @@ export default function V2Page() {
                   <span className="inline-flex items-center gap-2 text-sm font-medium text-neutral-500 group-hover:text-black transition-colors">
                     {program.cta} <ArrowRight className="w-3.5 h-3.5" />
                   </span>
-                </div>
+                </article>
               ))}
 
               <a href="/v2/services" className="rainbow-row-hover p-4 md:p-8 font-mono-ui text-xs text-neutral-400 hover:text-black transition-colors flex items-center gap-2">
@@ -494,28 +494,28 @@ export default function V2Page() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       {recentNewsletters.slice(1, 3).map((item, i) => (
-                        <div key={i} className="border border-black/10 p-3 hover:border-black/25 hover:bg-black/[0.02] transition-all cursor-pointer">
+                        <article key={i} className="border border-black/10 p-3 hover:border-black/25 hover:bg-black/[0.02] transition-all">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="font-mono-ui text-[9px] text-neutral-400">{item.number}</span>
-                            <span className="w-1 h-1 bg-neutral-300 rounded-full" />
+                            <span className="w-1 h-1 bg-neutral-300 rounded-full" aria-hidden="true" />
                             <span className="font-mono-ui text-[9px] text-neutral-400 uppercase">{item.type}</span>
                           </div>
-                          <div className="text-sm font-medium leading-snug">{item.title}</div>
-                          <div className="font-mono-ui text-[9px] text-neutral-400 mt-1">{item.readTime} read</div>
-                        </div>
+                          <h4 className="text-sm font-medium leading-snug">{item.title}</h4>
+                          <p className="font-mono-ui text-[9px] text-neutral-400 mt-1">{item.readTime} read</p>
+                        </article>
                       ))}
                     </div>
 
                     {/* More editions in dense list */}
                     <div className="mt-4">
                       {recentNewsletters.slice(3).map((item, i) => (
-                        <div key={i} className="flex items-center justify-between py-2.5 px-2 -mx-2 border-b border-black/10 last:border-b-0 rounded-sm hover:bg-black/[0.03] transition-colors cursor-pointer">
+                        <article key={i} className="flex items-center justify-between py-2.5 px-2 -mx-2 border-b border-black/10 last:border-b-0 rounded-sm hover:bg-black/[0.03] transition-colors">
                           <div className="flex items-center gap-2">
                             <span className="font-mono-ui text-[9px] text-neutral-400">{item.number}</span>
                             <span className="text-sm font-medium">{item.title}</span>
                           </div>
                           <span className="section-tag-sm">{item.type}</span>
-                        </div>
+                        </article>
                       ))}
                     </div>
                   </div>

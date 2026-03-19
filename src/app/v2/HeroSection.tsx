@@ -266,7 +266,7 @@ export default function HeroSection() {
                 {marqueeItems.map((item, j) => (
                   <span key={`${i}-${j}`} className="contents">
                     <span className="px-8 flex items-center gap-2.5">
-                      <span className="marquee-square" style={{ animationDelay: `${j * 0.5}s` }} />
+                      <span className="marquee-square" style={{ animationDelay: `${j * 0.5}s` }} aria-hidden="true" />
                       <item.icon className="w-3.5 h-3.5" /> {item.text}
                     </span>
                     |
@@ -535,7 +535,7 @@ export default function HeroSection() {
               {marqueeItems.map((item, j) => (
                 <span key={`${i}-${j}`} className="contents">
                   <span className="px-8 flex items-center gap-2.5">
-                    <span className="marquee-square" style={{ animationDelay: `${j * 0.5}s` }} />
+                    <span className="marquee-square" style={{ animationDelay: `${j * 0.5}s` }} aria-hidden="true" />
                     <item.icon className="w-3.5 h-3.5" /> {item.text}
                   </span>
                   |

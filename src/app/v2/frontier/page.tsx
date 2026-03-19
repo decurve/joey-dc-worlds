@@ -1,18 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import StarField from "./StarField";
 import {
   ArrowRight,
   BookOpen,
   Bot,
   Users,
-  Star,
-  Shield,
-  Zap,
   FileText,
-  Target,
-  Layers,
   MessageSquare,
   BarChart3,
   Mail,
@@ -20,26 +15,52 @@ import {
   ChevronRight,
   ChevronDown,
   Lock,
-  Globe,
   Briefcase,
-  Award,
-  CheckCircle2,
   Play,
   Megaphone,
-  PenTool,
   Eye,
-  TrendingUp,
   Gift,
   LayoutGrid,
   Bookmark,
+  BookmarkCheck,
   Library,
   ScanSearch,
   Ticket,
   Handshake,
-  Bell,
   Menu,
+  Settings,
 } from "lucide-react";
+
+/* ─── Skeleton Component ─── */
+
+function Skeleton({ className = "" }: { className?: string }) {
+  return (
+    <div
+      className={`bg-white/[0.06] rounded-lg animate-pulse ${className}`}
+    />
+  );
+}
+
+function SkeletonFloppyCard() {
+  return (
+    <div className="floppy">
+      <div className="floppy-slider">
+        <Skeleton className="h-2 w-12" />
+      </div>
+      <div className="floppy-label">
+        <Skeleton className="h-4 w-3/4 mb-2" />
+        <Skeleton className="h-2 w-full mb-1" />
+        <Skeleton className="h-2 w-2/3" />
+      </div>
+    </div>
+  );
+}
 import V2Nav from "../V2Nav";
+import { skillData, sopData, playbookData, teardownData, newsletterData, buildSearchIndex } from "./data";
+import { SkillDetail, SOPDetail, PlaybookDetail, TeardownDetail, NewsletterDetail, AdDetail } from "./components/DetailViews";
+import SubscribeModal from "./components/SubscribeModal";
+import SettingsPanel from "./components/SettingsPanel";
+import SearchBar from "./components/SearchBar";
 
 /* ─── Types ─── */
 
@@ -54,7 +75,13 @@ type ViewId =
   | "ad-examples"
   | "deals"
   | "services"
-  | "saved";
+  | "saved"
+  | "skill-detail"
+  | "sop-detail"
+  | "playbook-detail"
+  | "teardown-detail"
+  | "newsletter-detail"
+  | "ad-detail";
 
 /* ─── Data ─── */
 
@@ -159,29 +186,28 @@ function SidebarDropdown({
     <div>
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-white/[0.05] transition-colors text-neutral-400"
+        className="file-tab"
       >
-        <div className="flex items-center gap-3">
-          <Icon className="w-[18px] h-[18px]" />
-          <span className="text-sm">{label}</span>
-        </div>
-        <ChevronDown className={`w-4 h-4 opacity-40 transition-transform ${open ? "rotate-180" : ""}`} />
+        <Icon className="w-[15px] h-[15px] shrink-0" />
+        <span className="text-[12px] flex-1">{label}</span>
+        <span className={`text-[10px] opacity-30 transition-transform ${open ? "rotate-90" : ""}`}>▸</span>
       </button>
       {open && (
-        <div className="ml-10 mt-1 space-y-0.5">
+        <div className="ml-[29px] border-l border-white/[0.06] pl-3 py-1">
           {items.map((item) => (
             <button
               key={item.name}
               onClick={() => item.active !== false && onItemClick?.(item.name)}
-              className={`block w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors ${
+              className={`block w-full text-left px-2 py-2.5 text-[11px] transition-colors ${
                 item.active === false
-                  ? "text-neutral-600 cursor-default"
-                  : "text-neutral-400 hover:text-white hover:bg-white/[0.05] rainbow-hover-dark"
+                  ? "text-neutral-700 cursor-default"
+                  : "text-neutral-500 hover:text-white"
               }`}
             >
+              {item.active !== false && <span className="opacity-30 mr-1.5">└</span>}
               {item.name}
               {item.active === false && (
-                <span className="ml-2 text-[10px] text-neutral-600">Soon</span>
+                <span className="ml-1.5 text-[9px] text-neutral-700">—</span>
               )}
             </button>
           ))}
@@ -209,7 +235,113 @@ const darkAuroraBg = {
 
 export default function FrontierPage() {
   const [activeView, setActiveView] = useState<ViewId>("dashboard");
+  const [detailName, setDetailName] = useState<string>("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [viewHistory, setViewHistory] = useState<{ view: ViewId; sub: string }[]>([]);
+  const [bookmarks, setBookmarks] = useState<{ view: string; sub: string }[]>([]);
+  const [recentlyViewed, setRecentlyViewed] = useState<{ view: string; sub: string; title: string }[]>([]);
+  const [subscribeOpen, setSubscribeOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [scrollPositions, setScrollPositions] = useState<Record<string, number>>({});
+  const [toast, setToast] = useState<{ message: string; undo?: () => void } | null>(null);
+  const [toastTimer, setToastTimer] = useState<NodeJS.Timeout | null>(null);
+
+  const searchItems = buildSearchIndex();
+
+  // Loading state — defaults to false (local data). Ready for API fetching later.
+  const [loading] = useState(false);
+
+  // Load bookmarks from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("dc-bookmarks");
+    if (saved) setBookmarks(JSON.parse(saved));
+  }, []);
+
+  // Save bookmarks to localStorage
+  useEffect(() => {
+    localStorage.setItem("dc-bookmarks", JSON.stringify(bookmarks));
+  }, [bookmarks]);
+
+  // Navigate to a view
+  const navigate = useCallback((view: ViewId | string, sub?: string) => {
+    // Save scroll position of current view
+    const scrollEl = document.querySelector(".frontier-scroll");
+    if (scrollEl) {
+      setScrollPositions(prev => ({ ...prev, [activeView + (detailName || "")]: scrollEl.scrollTop }));
+    }
+
+    setViewHistory(prev => [...prev, { view: activeView, sub: detailName }]);
+    setActiveView(view as ViewId);
+    setDetailName(sub || "");
+    setSidebarOpen(false);
+
+    // Add to recently viewed for detail pages
+    if (sub && view.includes("detail")) {
+      setRecentlyViewed(prev => {
+        const filtered = prev.filter(r => !(r.view === view && r.sub === sub));
+        return [{ view, sub, title: sub }, ...filtered].slice(0, 5);
+      });
+    }
+
+    // Restore scroll or scroll to top
+    setTimeout(() => {
+      const el = document.querySelector(".frontier-scroll");
+      if (el) {
+        const savedPos = scrollPositions[view + (sub || "")];
+        el.scrollTop = savedPos || 0;
+      }
+    }, 50);
+  }, [activeView, detailName, scrollPositions]);
+
+  // Go back
+  const goBack = useCallback(() => {
+    const last = viewHistory[viewHistory.length - 1];
+    if (last) {
+      setViewHistory(prev => prev.slice(0, -1));
+      setActiveView(last.view);
+      setDetailName(last.sub);
+    }
+  }, [viewHistory]);
+
+  // Escape key to go back or close modals
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        if (subscribeOpen) { setSubscribeOpen(false); return; }
+        if (settingsOpen) { setSettingsOpen(false); return; }
+        if (activeView.includes("detail")) { goBack(); return; }
+      }
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [subscribeOpen, settingsOpen, activeView, goBack]);
+
+  // Show toast helper
+  function showToast(message: string, undo?: () => void) {
+    if (toastTimer) clearTimeout(toastTimer);
+    setToast({ message, undo });
+    const timer = setTimeout(() => setToast(null), 4000);
+    setToastTimer(timer);
+  }
+
+  // Toggle bookmark
+  function toggleBookmark(view: string, sub: string) {
+    setBookmarks(prev => {
+      const exists = prev.some(b => b.view === view && b.sub === sub);
+      if (exists) {
+        const removed = { view, sub };
+        showToast("Removed from saved. Undo?", () => {
+          setBookmarks(p => [...p, removed]);
+        });
+        return prev.filter(b => !(b.view === view && b.sub === sub));
+      }
+      return [...prev, { view, sub }];
+    });
+  }
+
+  function isBookmarked(view: string, sub: string) {
+    return bookmarks.some(b => b.view === view && b.sub === sub);
+  }
 
   const navItem = (
     view: ViewId,
@@ -223,16 +355,12 @@ export default function FrontierPage() {
       <button
         key={view}
         onClick={() => { setActiveView(view); setSidebarOpen(false); }}
-        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors w-full text-left ${
-          isActive
-            ? "bg-white/[0.08] text-white font-medium"
-            : "text-neutral-400 hover:bg-white/[0.05] hover:text-neutral-200 rainbow-hover-dark"
-        }`}
+        className={`file-tab ${isActive ? "file-tab-active" : ""}`}
       >
-        <Icon className="w-[18px] h-[18px]" />
-        <span className="text-sm">{label}</span>
+        <Icon className="w-[15px] h-[15px] shrink-0" />
+        <span className="text-[12px]">{label}</span>
         {badge && (
-          <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-white/[0.1] text-white font-medium">
+          <span className="ml-auto text-[9px] px-2 py-0.5 border border-white/[0.1] text-neutral-500">
             {badge}
           </span>
         )}
@@ -240,13 +368,26 @@ export default function FrontierPage() {
     );
   };
 
-  /* Card style helper — transparent, defined by borders only */
-  const card = "border border-white/[0.08] rounded-xl hover:border-white/[0.15] transition-all";
-  const cardStatic = "border border-white/[0.08] rounded-xl";
+  /* Floppy Disk card wrapper */
+  const FloppyCard = ({ type, children, onClick }: { type?: string; children: React.ReactNode; onClick?: () => void }) => (
+    <div className="floppy group" onClick={onClick}>
+      <div className="floppy-scan" />
+      <div className="floppy-slider">
+        {type && <span className="text-[8px] tracking-[0.2em] uppercase text-white/20">{type}</span>}
+      </div>
+      <div className="floppy-label">
+        {children}
+      </div>
+    </div>
+  );
+
+  /* Keep old card refs working */
+  const card = "frontier-card";
+  const cardStatic = "frontier-card";
 
   return (
     <div
-      className="flex flex-col h-screen overflow-hidden text-white relative"
+      className="flex flex-col h-screen overflow-hidden text-white relative retro-cursor"
       style={{
         fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
         backgroundColor: '#0a0a0b',
@@ -258,9 +399,38 @@ export default function FrontierPage() {
       }}
     >
       <StarField />
-      <V2Nav currentPage="THE FRONTIER" variant="dark" />
+      <V2Nav currentPage="THE FRONTIER" variant="dark" minimal searchSlot={
+        <SearchBar
+          items={[
+            ...searchItems,
+            { title: "Settings", type: "Action", view: "__action", sub: "settings" },
+            { title: "Subscribe", type: "Action", view: "__action", sub: "subscribe" },
+            { title: "Go to Dashboard", type: "Action", view: "dashboard" },
+            { title: "Go to Playbooks", type: "Action", view: "playbooks" },
+            { title: "Go to Newsletter Archives", type: "Action", view: "newsletters" },
+            { title: "Go to Claude Skills", type: "Action", view: "claude-skills" },
+            { title: "Go to SOP Library", type: "Action", view: "sop-library" },
+            { title: "Go to Teardowns", type: "Action", view: "teardowns" },
+            { title: "Go to Ad Examples", type: "Action", view: "ad-examples" },
+            { title: "Go to Saved", type: "Action", view: "saved" },
+            { title: "Go to Partner Deals", type: "Action", view: "deals" },
+            { title: "Go to Services", type: "Action", view: "services" },
+          ]}
+          onNavigate={(view, sub) => {
+            if (view === "__action") {
+              if (sub === "settings") setSettingsOpen(true);
+              else if (sub === "subscribe") setSubscribeOpen(true);
+            } else {
+              navigate(view as ViewId, sub);
+            }
+          }}
+        />
+      } />
 
-      <div className="relative z-10 flex flex-1 overflow-hidden" style={{ backgroundColor: '#0a0a0b' }}>
+      <div className="relative z-10 flex flex-1 overflow-hidden" style={{
+        backgroundColor: '#111113',
+        backgroundImage: 'repeating-linear-gradient(to bottom, transparent, transparent 2px, rgba(255,255,255,0.015) 2px, rgba(255,255,255,0.015) 4px)',
+      }}>
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div
@@ -271,24 +441,15 @@ export default function FrontierPage() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-40 w-72 border-r border-white/[0.08] flex flex-col h-full shrink-0 transition-transform lg:translate-x-0 ${
+        className={`frontier-panel fixed lg:static inset-y-0 left-0 z-40 w-64 border-r border-white/[0.08] flex flex-col h-full shrink-0 transition-transform lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
+        style={{ backgroundColor: '#141416' }}
       >
-        {/* Logo */}
-        <div className="pt-14 px-6 pb-6 flex items-center gap-3">
-          <a href="/v2" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-black" />
-            </div>
-            <span className="text-lg font-semibold tracking-tight text-white">DEMAND CURVE</span>
-          </a>
-        </div>
-
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto px-4 space-y-8 py-2">
+        <nav className="flex-1 overflow-y-auto px-4 space-y-8 pt-16 pb-4 hide-scrollbar">
           {/* Main */}
-          <div className="space-y-1">
+          <div>
             {navItem("dashboard", LayoutGrid, "Dashboard")}
             {navItem("saved", Bookmark, "Saved")}
             {navItem("playbooks", BookOpen, "The Playbooks")}
@@ -298,10 +459,8 @@ export default function FrontierPage() {
 
           {/* Resources */}
           <div>
-            <h3 className="px-3 text-xs font-semibold uppercase tracking-wider text-neutral-600 mb-2">
-              Resources
-            </h3>
-            <div className="space-y-1">
+            <div className="drawer-label">Resources</div>
+            <div>
               <SidebarDropdown
                 icon={Bot}
                 label="Claude Skills"
@@ -337,10 +496,8 @@ export default function FrontierPage() {
 
           {/* Member Perks */}
           <div>
-            <h3 className="px-3 text-xs font-semibold uppercase tracking-wider text-neutral-600 mb-2">
-              Member Perks
-            </h3>
-            <div className="space-y-1">
+            <div className="drawer-label">Member Perks</div>
+            <div>
               {navItem("deals", Ticket, "Partner Deals")}
               {navItem("services", Handshake, "Services")}
             </div>
@@ -348,38 +505,52 @@ export default function FrontierPage() {
         </nav>
 
         {/* Services callout */}
-        <div className="px-5 py-4 border-t border-white/[0.08]">
-          <button
-            onClick={() => setActiveView("services")}
-            className="w-full border border-white/[0.08] rounded-xl p-4 text-left hover:border-white/[0.2] transition-all group"
-          >
-            <div className="flex items-center gap-2 mb-1.5">
-              <Sparkles className="w-4 h-4 text-white" />
-              <span className="text-sm font-semibold text-white">Need hands-on help?</span>
+        <div className="px-3 py-4 border-t border-white/[0.04]">
+          <div className="os-window" onClick={() => setActiveView("services")} style={{ cursor: 'pointer' }}>
+            <div className="os-window-bar">
+              <span className="os-window-title">Services</span>
+              <div className="os-window-controls">
+                <span className="win98-btn" aria-hidden="true">
+                  <svg width="9" height="2" viewBox="0 0 9 2" fill="currentColor"><rect width="9" height="2"/></svg>
+                </span>
+                <span className="win98-btn" aria-hidden="true">
+                  <svg width="9" height="8" viewBox="0 0 9 8" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="0.75" y="0.75" width="7.5" height="6.5"/></svg>
+                </span>
+                <span className="win98-btn" aria-hidden="true">
+                  <svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="1" y1="1" x2="7" y2="7"/><line x1="7" y1="1" x2="1" y2="7"/></svg>
+                </span>
+              </div>
             </div>
-            <p className="text-xs text-neutral-500 mb-3">Our growth experts work 1:1 with you.</p>
-            <span className="text-xs font-medium text-white inline-flex items-center gap-1 rainbow-hover-dark transition-colors">
-              Explore Services <ArrowRight className="w-3 h-3" />
-            </span>
-          </button>
-        </div>
-
-        {/* User */}
-        <div className="p-4 border-t border-white/[0.08]">
-          <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/[0.05] transition-colors cursor-pointer">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-neutral-400 to-neutral-600" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">Ezzie Cat</p>
-              <p className="text-xs text-neutral-500 truncate">Premium Member</p>
+            <div className="os-window-body">
+              <p className="text-[11px] text-white mb-1">Need hands-on help?</p>
+              <p className="text-[10px] text-neutral-500 mb-2 leading-relaxed">Our growth experts work 1:1 with you.</p>
+              <span className="text-[10px] text-neutral-400 inline-flex items-center gap-1 hover:text-white transition-colors">
+                Explore Services <ArrowRight className="w-2.5 h-2.5 transition-transform group-hover:translate-x-1" />
+              </span>
             </div>
           </div>
         </div>
+
+        {/* Block character decoration */}
+        <div className="px-4 py-2 border-t border-white/[0.08] text-[9px] tracking-[0.15em] text-white/[0.07] overflow-hidden whitespace-nowrap">
+          ░▒▓█▓▒░·:·░▒▓█▓▒░·:·░▒▓█▓▒░
+        </div>
+
+        {/* User */}
+        <button onClick={() => setSettingsOpen(true)} className="flex items-center gap-3 w-full px-5 py-4 border-t border-white/[0.08] hover:bg-white/[0.04] transition-colors cursor-pointer text-left">
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-neutral-400 to-neutral-600 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-white truncate">Ezzie Cat</p>
+            <p className="text-xs text-neutral-500 truncate">Premium Member</p>
+          </div>
+          <ChevronDown className="w-4 h-4 text-neutral-600 shrink-0" />
+        </button>
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-full overflow-hidden">
         {/* Header */}
-        <header className="h-16 border-b border-white/[0.08] flex items-center justify-between px-6 shrink-0">
+        <header className="frontier-panel h-16 border-b border-white/[0.08] flex items-center justify-between px-6 shrink-0" style={{ backgroundColor: '#141416' }}>
           {/* Mobile menu */}
           <button
             onClick={() => setSidebarOpen(true)}
@@ -389,134 +560,192 @@ export default function FrontierPage() {
           </button>
 
           <div className="flex-1" />
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSettingsOpen(true)}
+              className="p-2 text-neutral-500 hover:text-white transition-colors"
+              aria-label="Settings"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+            <span className="hidden lg:block text-[9px] tracking-[0.15em] text-white/[0.07] whitespace-nowrap">
+              █▓▒░·:·░▒▓
+            </span>
+          </div>
         </header>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 md:p-8">
-          <div className="max-w-[1400px] mx-auto">
-            {/* Breadcrumb */}
-            <div className="text-xs text-neutral-500 mb-6 flex items-center gap-2">
-              <button onClick={() => setActiveView("dashboard")} className="rainbow-hover-dark transition-colors">
-                Dashboard
-              </button>
-              {activeView !== "dashboard" && (
-                <>
-                  <span>&rsaquo;</span>
-                  <span className="text-neutral-300 capitalize">
-                    {activeView.replace(/-/g, " ")}
-                  </span>
-                </>
-              )}
-            </div>
+        <div className="flex-1 overflow-y-auto retro-scrollbar frontier-scroll">
 
-            {/* ===== DASHBOARD VIEW ===== */}
-            {activeView === "dashboard" && (
-              <div>
-                {/* Hero */}
-                <div className="py-12 md:py-20 mb-10 border-b border-white/[0.08]">
-                  <div className="text-xs tracking-widest uppercase text-white mb-6">
-                    GROWTH NEWSLETTER
+          {/* ===== DASHBOARD VIEW ===== */}
+          {activeView === "dashboard" && (
+            <div>
+              {/* CRT hero section */}
+              <div className="crt-container">
+                <div className="crt-scanlines-overlay" />
+                <div className="crt-scanbar" />
+                <div className="p-6 md:p-10 lg:p-12 pb-16 relative" style={{ zIndex: 5 }}>
+                  <div className="max-w-[1400px] mx-auto">
+                    {/* Breadcrumb */}
+                    <div className="text-xs text-neutral-500 mb-6 flex items-center gap-2">
+                      <button onClick={() => navigate("dashboard")} className="rainbow-hover-dark transition-colors">
+                        Dashboard
+                      </button>
+                    </div>
+
+                    {/* Hero */}
+                    <div className="py-12 md:py-20">
+                      <div className="text-[10px] tracking-[0.2em] uppercase text-neutral-500 mb-8">
+                        THE GROWTH FRONTIER
+                      </div>
+                      <h1 className="font-heading text-4xl md:text-6xl lg:text-7xl leading-[0.9] tracking-tight text-white mb-8 crt-text" style={{ position: 'relative', zIndex: 10, display: 'inline-block' }}>
+                        Welcome to the<br /><span className="blink-cursor">Growth Frontier</span>
+                      </h1>
+                      <p className="text-neutral-400 text-lg md:text-xl max-w-2xl mb-10">
+                        We share the top strategies and tactics used by fast-growing startups.
+                      </p>
+                      <div className="flex flex-wrap gap-8 text-[10px] tracking-[0.15em] uppercase text-neutral-500 mb-12">
+                        <span className="flex items-center gap-2.5"><span className="text-white">[✓]</span> Tactics and Strategies</span>
+                        <span className="flex items-center gap-2.5"><span className="text-white">[✓]</span> For Free</span>
+                        <span className="flex items-center gap-2.5"><span className="text-white">[✓]</span> Join 100,000+ Startups</span>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-3 max-w-lg">
+                        <input
+                          type="email"
+                          placeholder="email@demandcurve.com"
+                          className="flex-1 bg-white/[0.05] border border-white/[0.1] rounded-lg px-4 py-3.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-white/25 transition-colors"
+                        />
+                        <button onClick={() => setSubscribeOpen(true)} className="glow-btn-dark px-6 py-3.5 rounded-lg text-sm font-semibold shrink-0 relative">
+                          <span className="relative z-10">Subscribe</span>
+                        </button>
+                      </div>
+                      <p className="text-neutral-600 text-xs mt-4">
+                        You&apos;ll receive your first issue in a few minutes. Unsubscribe anytime.
+                      </p>
+                    </div>
                   </div>
-                  <h1 className="text-4xl md:text-6xl lg:text-7xl leading-[0.9] tracking-tight text-white mb-6">
-                    Welcome to the<br />Growth Frontier
-                  </h1>
-                  <p className="text-neutral-400 text-lg md:text-xl max-w-2xl mb-8">
-                    We share the top strategies and tactics used by fast-growing startups.
-                  </p>
-                  <div className="flex flex-wrap gap-6 text-xs tracking-wide text-neutral-500 mb-10">
-                    <span className="flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-white" /> TACTICS AND STRATEGIES</span>
-                    <span className="flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-white" /> FOR FREE</span>
-                    <span className="flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-white" /> JOIN 100,000+ STARTUPS</span>
-                  </div>
-                  <div className="flex items-center gap-3 max-w-lg">
-                    <input
-                      type="email"
-                      placeholder="email@demandcurve.com"
-                      className="flex-1 bg-white/[0.05] border border-white/[0.1] rounded-lg px-4 py-3.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-white/25 transition-colors"
-                    />
-                    <button className="bg-white text-black px-6 py-3.5 rounded-lg text-sm font-semibold hover:bg-neutral-200 transition-colors shrink-0">
-                      Subscribe
-                    </button>
-                  </div>
-                  <p className="text-neutral-600 text-xs mt-4">
-                    You&apos;ll receive your first issue in a few minutes. Unsubscribe anytime.
-                  </p>
                 </div>
+              </div>
+              {/* TV bezel — bottom of the CRT screen */}
+              <div className="crt-bezel" />
 
-                {/* Trusted By */}
-                <div className="mb-12 text-center">
-                  <div className="text-[10px] tracking-widest uppercase text-neutral-600 mb-4">
-                    TRUSTED BY MARKETERS AT
+              {/* Below the TV — normal content */}
+              <div className="p-6 md:p-10 lg:p-12">
+              <div className="max-w-[1400px] mx-auto">
+
+                {/* Trusted By — compact, quiet */}
+                <div className="mb-4 pt-2 text-center">
+                  <div className="text-[9px] tracking-[0.25em] uppercase text-neutral-700 mb-4">
+                    &gt; Trusted by marketers at
                   </div>
-                  <div className="flex flex-wrap justify-center gap-6 text-neutral-500 font-medium text-sm">
+                  <div className="flex flex-wrap justify-center gap-6 text-neutral-600 text-xs tracking-wide">
                     {["Shopify", "Stripe", "Webflow", "Loom", "Mercury", "Deel", "Notion", "Vercel"].map((co) => (
                       <span key={co}>{co}</span>
                     ))}
                   </div>
                 </div>
 
-                {/* Featured Resources */}
-                <div className="mb-12">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="font-semibold text-lg text-white">Featured Resources</h2>
-                    <span className="text-xs text-neutral-500">5 ITEMS</span>
+                <hr className="frontier-divider mb-8" />
+
+                {/* Featured Resources — the main attraction, generous space */}
+                <div className="mb-16 pb-8 rounded-2xl px-6 py-8 -mx-6" style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.04)' }}>
+                  <div className="flex items-center justify-between mb-8">
+                    <h2 className="font-heading text-2xl font-semibold text-white tracking-tight">Featured Resources</h2>
+                    <span className="text-[9px] tracking-[0.2em] uppercase text-neutral-700">5 Items</span>
                   </div>
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {featuredResources.map((r) => (
-                      <div
-                        key={r.title}
-                        className={`group ${card} p-5 cursor-pointer`}
-                      >
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-9 h-9 rounded-lg bg-white/[0.05] flex items-center justify-center">
-                            <r.icon className="w-4 h-4 text-neutral-400" />
-                          </div>
-                          <span className={`text-[10px] tracking-widest px-2 py-0.5 rounded border ${r.color}`}>
-                            {r.tag}
-                          </span>
-                        </div>
-                        <h3 className="font-semibold text-sm mb-1.5 text-white rainbow-hover-dark group-hover:text-white transition-colors">
-                          {r.title}
-                        </h3>
-                        <p className="text-xs text-neutral-500 leading-relaxed">{r.desc}</p>
-                      </div>
-                    ))}
+                    {loading ? (
+                      <>
+                        {[1, 2, 3, 4, 5].map((i) => <SkeletonFloppyCard key={i} />)}
+                      </>
+                    ) : null}
+                    {!loading && featuredResources.map((r) => {
+                      const viewMap: Record<string, ViewId> = { Skill: "skill-detail", SOP: "sop-detail", Playbook: "playbook-detail", Newsletter: "newsletter-detail" };
+                      const targetView = viewMap[r.tag] || "dashboard";
+                      const sub = r.tag === "Newsletter" ? "314" : r.title;
+                      return (
+                        <FloppyCard
+                          key={r.title}
+                          type={r.tag}
+                          onClick={() => navigate(targetView, sub)}
+                        >
+                          <button
+                            onClick={(e) => { e.stopPropagation(); toggleBookmark(targetView, sub); }}
+                            className="absolute top-0 right-0 w-11 h-11 flex items-center justify-center text-neutral-600 hover:text-white transition-colors z-20"
+                            aria-label="Bookmark"
+                          >
+                            {isBookmarked(targetView, sub) ? <BookmarkCheck className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}
+                          </button>
+                          <h3 className="font-semibold text-[13px] mb-1 text-white">
+                            {r.title}
+                          </h3>
+                          <p className="text-[10px] text-neutral-500 leading-relaxed">{r.desc}</p>
+                        </FloppyCard>
+                      );
+                    })}
                   </div>
                 </div>
 
-                {/* Learning Paths */}
+                <hr className="frontier-divider mb-12" />
+
+                {/* Learning Paths — secondary, tighter */}
                 <div>
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="font-semibold text-lg text-white">Learning Paths</h2>
+                    <h2 className="text-sm font-medium text-white tracking-wide uppercase">Learning Paths</h2>
                   </div>
                   <div className="grid md:grid-cols-2 gap-4">
-                    <div className={`${cardStatic} p-5`}>
-                      <div className="text-[10px] tracking-widest text-white mb-2">PATH 1</div>
-                      <h3 className="font-semibold text-sm mb-1 text-white">Story Systems Path</h3>
-                      <p className="text-xs text-neutral-500">Messaging foundation &rarr; Launch. Build your complete brand story system.</p>
-                    </div>
-                    <div className={`${cardStatic} p-5`}>
-                      <div className="text-[10px] tracking-widest text-emerald-400 mb-2">PATH 2</div>
-                      <h3 className="font-semibold text-sm mb-1 text-white">Cold Outreach Mastery</h3>
-                      <p className="text-xs text-neutral-500">Email templates &rarr; Sales execution. Book 50+ calls per month.</p>
-                    </div>
+                    <FloppyCard type="PATH 01">
+                      <h3 className="font-heading text-base mb-2 text-white tracking-tight">Story Systems Path</h3>
+                      <p className="text-[10px] text-neutral-500 leading-relaxed">Messaging foundation &rarr; Launch. Build your complete brand story system.</p>
+                    </FloppyCard>
+                    <FloppyCard type="PATH 02">
+                      <h3 className="font-heading text-base mb-2 text-white tracking-tight">Cold Outreach Mastery</h3>
+                      <p className="text-[10px] text-neutral-500 leading-relaxed">Email templates &rarr; Sales execution. Book 50+ calls per month.</p>
+                    </FloppyCard>
                   </div>
                 </div>
               </div>
-            )}
+              </div>
+            </div>
+          )}
+
+          {/* Non-dashboard views get their own padding */}
+          {activeView !== "dashboard" && (
+          <div className="p-6 md:p-10 lg:p-12">
+            <div className="max-w-[1400px] mx-auto">
+            {/* Breadcrumb */}
+            <div className="text-xs text-neutral-500 mb-6 flex items-center gap-2">
+              <button onClick={() => navigate("dashboard")} className="rainbow-hover-dark transition-colors">
+                Dashboard
+              </button>
+              <span>&rsaquo;</span>
+              {detailName ? (
+                <>
+                  <button onClick={goBack} className="hover:text-white transition-colors capitalize">
+                    {activeView.replace(/-detail/, "s").replace(/-/g, " ")}
+                  </button>
+                  <span className="text-neutral-700">&rsaquo;</span>
+                  <span className="text-neutral-300">{detailName}</span>
+                </>
+              ) : (
+                <span className="text-neutral-300 capitalize">{activeView.replace(/-/g, " ")}</span>
+              )}
+            </div>
 
             {/* ===== PLAYBOOKS VIEW ===== */}
             {activeView === "playbooks" && (
               <div>
-                <h1 className="text-3xl tracking-tight mb-2 text-white">The Playbooks</h1>
+                <h1 className="font-heading text-3xl md:text-4xl tracking-tight mb-4 text-white">The Playbooks</h1>
                 <p className="text-neutral-400 mb-8">In-depth guides and frameworks you can apply today.</p>
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-in">
                   {playbooks.map((pb) => (
-                    <div key={pb.title} className={`group ${card} p-5 cursor-pointer`}>
+                    <div key={pb.title} className={`group ${card} p-5 cursor-pointer`} onClick={() => navigate("playbook-detail", pb.title)}>
                       <span className="text-[10px] tracking-widest px-2 py-0.5 rounded border bg-violet-500/10 text-violet-400 border-violet-500/20 mb-3 inline-block">
                         {pb.topic}
                       </span>
-                      <h3 className="font-semibold text-sm mb-1.5 text-white rainbow-hover-dark">{pb.title}</h3>
+                      <h3 className="font-medium text-sm mb-2 text-white rainbow-hover-dark">{pb.title}</h3>
                       <p className="text-xs text-neutral-500 leading-relaxed">{pb.desc}</p>
                     </div>
                   ))}
@@ -527,19 +756,19 @@ export default function FrontierPage() {
             {/* ===== NEWSLETTERS VIEW ===== */}
             {activeView === "newsletters" && (
               <div>
-                <h1 className="text-3xl tracking-tight mb-2 text-white">Newsletter Archives</h1>
+                <h1 className="font-heading text-3xl md:text-4xl tracking-tight mb-4 text-white">Newsletter Archives</h1>
                 <p className="text-neutral-400 mb-8">Every edition of the Demand Curve newsletter.</p>
-                <div className="space-y-2">
+                <div className="space-y-2 stagger-in">
                   {newsletters.map((nl) => (
-                    <div key={nl.number} className={`group flex items-center gap-4 p-4 ${card} cursor-pointer`}>
+                    <div key={nl.number} className={`group flex items-center gap-4 p-4 ${card} cursor-pointer`} onClick={() => navigate("newsletter-detail", nl.number.replace("#", ""))}>
                       <div className="w-10 h-10 shrink-0 rounded-lg bg-teal-500/10 flex items-center justify-center">
                         <Mail className="w-5 h-5 text-teal-400" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="font-semibold text-sm text-white rainbow-hover-dark">{nl.title}</div>
-                        <div className="text-xs text-neutral-500">{nl.number} &middot; {nl.date} &middot; {nl.topic}</div>
+                        <div className="text-xs text-neutral-500 tabular-nums">{nl.number} &middot; {nl.date} &middot; {nl.topic}</div>
                       </div>
-                      <ChevronRight className="w-4 h-4 text-neutral-600 group-hover:text-neutral-400 transition-colors shrink-0" />
+                      <ChevronRight className="w-4 h-4 text-neutral-600 group-hover:text-neutral-400 group-hover:translate-x-0.5 transition-all shrink-0" />
                     </div>
                   ))}
                 </div>
@@ -549,11 +778,11 @@ export default function FrontierPage() {
             {/* ===== CLAUDE SKILLS VIEW ===== */}
             {activeView === "claude-skills" && (
               <div>
-                <h1 className="text-3xl tracking-tight mb-2 text-white">Claude Skills</h1>
+                <h1 className="font-heading text-3xl md:text-4xl tracking-tight mb-4 text-white">Claude Skills</h1>
                 <p className="text-neutral-400 mb-8">AI-powered growth systems — use with Claude, ChatGPT, or any LLM.</p>
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid md:grid-cols-2 gap-4 stagger-in">
                   {claudeSkills.map((skill) => (
-                    <div key={skill.name} className={`group ${card} p-5 cursor-pointer`}>
+                    <div key={skill.name} className={`group ${card} p-5 cursor-pointer`} onClick={() => navigate("skill-detail", skill.name)}>
                       <div className="flex items-center gap-3 mb-3">
                         <div className="w-9 h-9 rounded-lg bg-white/[0.08] flex items-center justify-center">
                           <Bot className="w-4 h-4 text-white" />
@@ -562,7 +791,7 @@ export default function FrontierPage() {
                           SKILL
                         </span>
                       </div>
-                      <h3 className="font-semibold text-sm mb-1.5 text-white rainbow-hover-dark">{skill.name}</h3>
+                      <h3 className="font-medium text-sm mb-2 text-white rainbow-hover-dark">{skill.name}</h3>
                       <p className="text-xs text-neutral-500 leading-relaxed">{skill.desc}</p>
                     </div>
                   ))}
@@ -573,11 +802,11 @@ export default function FrontierPage() {
             {/* ===== SOP LIBRARY VIEW ===== */}
             {activeView === "sop-library" && (
               <div>
-                <h1 className="text-3xl tracking-tight mb-2 text-white">SOP Templates</h1>
+                <h1 className="font-heading text-3xl md:text-4xl tracking-tight mb-4 text-white">SOP Templates</h1>
                 <p className="text-neutral-400 mb-8">Copy, customize, and execute. Standard operating procedures for growth teams.</p>
-                <div className="space-y-2">
+                <div className="space-y-2 stagger-in">
                   {sopTemplates.map((sop) => (
-                    <div key={sop.name} className={`group flex items-center gap-4 p-4 ${card} cursor-pointer`}>
+                    <div key={sop.name} className={`group flex items-center gap-4 p-4 ${card} cursor-pointer`} onClick={() => navigate("sop-detail", sop.name)}>
                       <div className="w-10 h-10 shrink-0 rounded-lg bg-emerald-500/10 flex items-center justify-center">
                         <FileText className="w-5 h-5 text-emerald-400" />
                       </div>
@@ -585,7 +814,7 @@ export default function FrontierPage() {
                         <div className="font-semibold text-sm text-white rainbow-hover-dark">{sop.name}</div>
                         <div className="text-xs text-neutral-500">{sop.desc}</div>
                       </div>
-                      <ChevronRight className="w-4 h-4 text-neutral-600 group-hover:text-neutral-400 transition-colors shrink-0" />
+                      <ChevronRight className="w-4 h-4 text-neutral-600 group-hover:text-neutral-400 group-hover:translate-x-0.5 transition-all shrink-0" />
                     </div>
                   ))}
                 </div>
@@ -595,15 +824,15 @@ export default function FrontierPage() {
             {/* ===== TEARDOWNS VIEW ===== */}
             {activeView === "teardowns" && (
               <div>
-                <h1 className="text-3xl tracking-tight mb-2 text-white">Teardowns</h1>
+                <h1 className="font-heading text-3xl md:text-4xl tracking-tight mb-4 text-white">Teardowns</h1>
                 <p className="text-neutral-400 mb-8">Landing page psychology and UX breakdowns from real companies.</p>
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-in">
                   {teardowns.map((name) => (
-                    <div key={name} className={`group ${card} p-5 cursor-pointer`}>
+                    <div key={name} className={`group ${card} p-5 cursor-pointer`} onClick={() => navigate("teardown-detail", name)}>
                       <div className="w-full h-32 rounded-lg bg-white/[0.03] mb-4 flex items-center justify-center">
                         <ScanSearch className="w-8 h-8 text-neutral-600" />
                       </div>
-                      <h3 className="font-semibold text-sm mb-1 text-white rainbow-hover-dark">{name}</h3>
+                      <h3 className="font-medium text-sm mb-1 text-white rainbow-hover-dark">{name}</h3>
                       <p className="text-xs text-neutral-500">Landing page teardown &middot; Psychology & conversion</p>
                     </div>
                   ))}
@@ -614,11 +843,11 @@ export default function FrontierPage() {
             {/* ===== AD EXAMPLES VIEW ===== */}
             {activeView === "ad-examples" && (
               <div>
-                <h1 className="text-3xl tracking-tight mb-2 text-white">Ad Examples</h1>
+                <h1 className="font-heading text-3xl md:text-4xl tracking-tight mb-4 text-white">Ad Examples</h1>
                 <p className="text-neutral-400 mb-8">Real ads from top brands — Meta, Google, LinkedIn, and more.</p>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 stagger-in">
                   {adBrands.map((brand) => (
-                    <div key={brand} className={`group ${card} overflow-hidden cursor-pointer`}>
+                    <div key={brand} className={`group ${card} overflow-hidden cursor-pointer`} onClick={() => navigate("ad-detail", brand)}>
                       <div className="w-full aspect-square bg-white/[0.03] flex items-center justify-center">
                         <Megaphone className="w-8 h-8 text-neutral-600" />
                       </div>
@@ -635,13 +864,13 @@ export default function FrontierPage() {
             {/* ===== DEALS VIEW ===== */}
             {activeView === "deals" && (
               <div>
-                <h1 className="text-3xl tracking-tight mb-2 text-white">Partner Deals & Perks</h1>
+                <h1 className="font-heading text-3xl md:text-4xl tracking-tight mb-4 text-white">Partner Deals & Perks</h1>
                 <p className="text-neutral-400 mb-8">$840+ in exclusive savings for Frontier members.</p>
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-in">
                   {deals.map((deal) => (
                     <div key={deal.name} className={`${card} p-5 cursor-pointer`}>
                       <Gift className="w-6 h-6 text-neutral-500 mb-3" />
-                      <h3 className="font-semibold text-sm mb-1 text-white rainbow-hover-dark">{deal.name}</h3>
+                      <h3 className="font-medium text-sm mb-1 text-white rainbow-hover-dark">{deal.name}</h3>
                       <span className="text-[10px] tracking-widest text-neutral-500">{deal.category.toUpperCase()}</span>
                     </div>
                   ))}
@@ -652,7 +881,7 @@ export default function FrontierPage() {
             {/* ===== SERVICES VIEW ===== */}
             {activeView === "services" && (
               <div>
-                <h1 className="text-3xl tracking-tight mb-2 text-white">Services & Audits</h1>
+                <h1 className="font-heading text-3xl md:text-4xl tracking-tight mb-4 text-white">Services & Audits</h1>
                 <p className="text-neutral-400 mb-8">Senior growth operators working 1:1 with your team. 20% off for Frontier members.</p>
 
                 {/* Stats */}
@@ -664,18 +893,18 @@ export default function FrontierPage() {
                     { value: "$450M+", label: "Media spend managed" },
                   ].map((stat) => (
                     <div key={stat.label} className={`${cardStatic} p-4 text-center`}>
-                      <div className="text-2xl font-semibold mb-1 text-white">{stat.value}</div>
+                      <div className="text-2xl font-semibold mb-1 text-white tabular-nums">{stat.value}</div>
                       <div className="text-xs text-neutral-500">{stat.label}</div>
                     </div>
                   ))}
                 </div>
 
                 {/* Audits */}
-                <h2 className="font-semibold text-lg mb-4 text-white">Expert Audits</h2>
+                <h2 className="font-heading text-xl mb-6 text-white tracking-tight">Expert Audits</h2>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
                   {audits.map((audit) => (
                     <div key={audit.name} className={`${card} p-5`}>
-                      <h3 className="font-semibold text-sm mb-2 text-white rainbow-hover-dark">{audit.name}</h3>
+                      <h3 className="font-medium text-sm mb-2 text-white rainbow-hover-dark">{audit.name}</h3>
                       <p className="text-xs text-neutral-400 leading-relaxed mb-3">{audit.desc}</p>
                       <div className="text-[10px] tracking-widest text-neutral-600">
                         PAIRS WITH: {audit.skill.toUpperCase()}
@@ -685,7 +914,7 @@ export default function FrontierPage() {
                 </div>
 
                 {/* Done-with-you */}
-                <h2 className="font-semibold text-lg mb-4 text-white">Done-With-You Services</h2>
+                <h2 className="font-heading text-xl mb-6 text-white tracking-tight">Done-With-You Services</h2>
                 <div className="grid md:grid-cols-3 gap-4">
                   {[
                     { name: "Paid Acquisition", desc: "Strategy, leadership, execution for Meta, Google, TikTok, LinkedIn." },
@@ -693,7 +922,7 @@ export default function FrontierPage() {
                     { name: "AEO Agency", desc: "Full-service AI search ranking — ChatGPT, Perplexity, Gemini." },
                   ].map((svc) => (
                     <div key={svc.name} className={`${card} p-5`}>
-                      <h3 className="font-semibold text-sm mb-2 text-white rainbow-hover-dark">{svc.name}</h3>
+                      <h3 className="font-medium text-sm mb-2 text-white rainbow-hover-dark">{svc.name}</h3>
                       <p className="text-xs text-neutral-400 leading-relaxed">{svc.desc}</p>
                     </div>
                   ))}
@@ -704,7 +933,7 @@ export default function FrontierPage() {
             {/* ===== COMMUNITY VIEW ===== */}
             {activeView === "community" && (
               <div>
-                <h1 className="text-3xl tracking-tight mb-2 text-white">Community</h1>
+                <h1 className="font-heading text-3xl md:text-4xl tracking-tight mb-4 text-white">Community</h1>
                 <p className="text-neutral-400 mb-8">Growth operators, founders, and marketers sharing real playbooks and honest feedback.</p>
                 <div className="grid md:grid-cols-2 gap-4">
                   {[
@@ -729,18 +958,109 @@ export default function FrontierPage() {
             {/* ===== SAVED VIEW ===== */}
             {activeView === "saved" && (
               <div>
-                <h1 className="text-3xl tracking-tight mb-2 text-white">Saved Resources</h1>
+                <h1 className="font-heading text-3xl md:text-4xl tracking-tight mb-4 text-white">Saved Resources</h1>
                 <p className="text-neutral-400 mb-8">Your bookmarked content.</p>
-                <div className={`${cardStatic} p-12 text-center`}>
-                  <Bookmark className="w-8 h-8 text-neutral-600 mx-auto mb-3" />
-                  <p className="text-sm text-neutral-500">No saved resources yet. Click the bookmark icon on any resource to save it here.</p>
-                </div>
+                {bookmarks.length === 0 ? (
+                  <div className={`${cardStatic} p-12 text-center`}>
+                    <Bookmark className="w-8 h-8 text-neutral-600 mx-auto mb-3" />
+                    <p className="text-sm text-neutral-500">No saved resources yet. Click the bookmark icon on any resource to save it here.</p>
+                  </div>
+                ) : (
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {bookmarks.map((b) => (
+                      <div
+                        key={`${b.view}-${b.sub}`}
+                        className={`${card} p-5 cursor-pointer`}
+                        onClick={() => navigate(b.view as ViewId, b.sub)}
+                      >
+                        <span className="frontier-tag mb-3 inline-block">{b.view.replace(/-detail/, "").replace(/-/g, " ")}</span>
+                        <h3 className="font-semibold text-sm text-white">{b.sub}</h3>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
+
+            {/* ===== DETAIL VIEWS ===== */}
+
+            {activeView === "skill-detail" && detailName && skillData[detailName] && (
+              <SkillDetail
+                skill={{ name: detailName, category: skillData[detailName].tag, ...skillData[detailName] }}
+                onBack={goBack}
+              />
+            )}
+
+            {activeView === "sop-detail" && detailName && sopData[detailName] && (
+              <SOPDetail
+                sop={{ name: detailName, ...sopData[detailName] }}
+                onBack={goBack}
+                onNavigate={(view, sub) => navigate(view as ViewId, sub)}
+              />
+            )}
+
+            {activeView === "playbook-detail" && detailName && playbookData[detailName] && (
+              <PlaybookDetail
+                playbook={{
+                  title: detailName,
+                  topic: playbookData[detailName].tag,
+                  desc: playbookData[detailName].about,
+                  sections: playbookData[detailName].content.split("\n\n").reduce((acc: { title: string; content: string }[], para, i) => {
+                    if (i % 2 === 0) acc.push({ title: para, content: "" });
+                    else if (acc.length > 0) acc[acc.length - 1].content = para;
+                    return acc;
+                  }, []),
+                }}
+                onBack={goBack}
+              />
+            )}
+
+            {activeView === "teardown-detail" && detailName && teardownData[detailName] && (
+              <TeardownDetail
+                teardown={{ name: detailName, ...teardownData[detailName] }}
+                onBack={goBack}
+              />
+            )}
+
+            {activeView === "newsletter-detail" && detailName && newsletterData[detailName] && (
+              <NewsletterDetail
+                newsletter={{
+                  ...newsletterData[detailName],
+                  number: `#${detailName}`,
+                  summary: newsletterData[detailName].takeaways?.join(". ") || "",
+                }}
+                onBack={goBack}
+              />
+            )}
+
+            {activeView === "ad-detail" && detailName && (
+              <AdDetail brand={detailName} onBack={goBack} />
+            )}
           </div>
+          </div>
+          )}
         </div>
       </main>
       </div>
+
+      {/* Toast notification */}
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[300] flex items-center gap-4 bg-[#1a1a1c] border border-white/[0.1] rounded-lg px-4 py-3 shadow-2xl">
+          <span className="text-sm text-neutral-300">{toast.message}</span>
+          {toast.undo && (
+            <button
+              onClick={() => { toast.undo?.(); setToast(null); }}
+              className="text-sm font-semibold text-white hover:text-neutral-300 transition-colors"
+            >
+              Undo
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Modals */}
+      <SubscribeModal open={subscribeOpen} onClose={() => setSubscribeOpen(false)} />
+      <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   );
 }
