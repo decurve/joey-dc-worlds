@@ -24,10 +24,34 @@ const tabs = [
   { label: "retention.md", path: "Retention", icon: FileText },
 ];
 
+/* ── Sound FX (Web Audio API — no files needed) ── */
+function createSfx() {
+  const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+
+  function play(freq: number, duration: number, type: OscillatorType = "square", vol = 0.12) {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    gain.gain.setValueAtTime(vol, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + duration);
+  }
+
+  return {
+    jump: () => play(520, 0.12, "square", 0.1),
+    milestone: () => { play(660, 0.08); setTimeout(() => play(880, 0.12), 60); },
+    hit: () => { play(120, 0.25, "sawtooth", 0.15); play(80, 0.35, "square", 0.08); },
+  };
+}
+
 /* ── Mini Game ── */
 function MiniGame({ onClose }: { onClose: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const frameRef = useRef(0);
+  const sfxRef = useRef<ReturnType<typeof createSfx> | null>(null);
   const gameRef = useRef({
     playerY: 0,
     velocityY: 0,
@@ -41,9 +65,9 @@ function MiniGame({ onClose }: { onClose: () => void }) {
   });
 
   const jump = useCallback(() => {
+    if (!sfxRef.current) sfxRef.current = createSfx();
     const g = gameRef.current;
     if (g.gameOver) {
-      // Reset
       g.playerY = 0;
       g.velocityY = 0;
       g.isJumping = false;
@@ -60,6 +84,7 @@ function MiniGame({ onClose }: { onClose: () => void }) {
     if (!g.isJumping) {
       g.velocityY = -12;
       g.isJumping = true;
+      sfxRef.current.jump();
     }
   }, []);
 
@@ -143,6 +168,7 @@ function MiniGame({ onClose }: { onClose: () => void }) {
 
         // Score & speed
         g.score++;
+        if (g.score % 500 === 0 && sfxRef.current) sfxRef.current.milestone();
         g.speed = 4 + Math.floor(g.score / 200) * 0.5;
 
         // Spawn obstacles
@@ -173,6 +199,7 @@ function MiniGame({ onClose }: { onClose: () => void }) {
           const oy = ground - oh;
           if (px + pw > ox + 3 && px < ox + ow - 3 && py + ph > oy + 3) {
             g.gameOver = true;
+            if (sfxRef.current) sfxRef.current.hit();
           }
         }
       }
@@ -271,8 +298,8 @@ export default function GrowthProgramWindow() {
       {/* Title bar — macOS dots + spec label */}
       <div className="flex items-center gap-3 px-4 py-2.5 border-b border-black/10 bg-neutral-50 relative z-30">
         <div className="flex gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57] cursor-pointer hover:brightness-90" onClick={() => setShowGame(false)} />
-          <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
+          <button type="button" aria-label="Close game" className="w-2.5 h-2.5 rounded-full bg-[#ff5f57] cursor-pointer hover:brightness-90" onClick={() => setShowGame(false)} />
+          <span className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" aria-hidden="true" />
           <button className="w-2.5 h-2.5 rounded-full bg-[#28c840] cursor-pointer hover:brightness-90" onClick={() => setShowGame(!showGame)} />
         </div>
         <span className="font-mono-ui text-[10px] text-neutral-400 ml-1">
@@ -295,8 +322,10 @@ export default function GrowthProgramWindow() {
                   : "text-neutral-400 hover:text-black"
               }`}
             >
-              <Icon className={`w-3 h-3 inline-block mr-1.5 ${isActive ? "opacity-40" : "opacity-30"}`} />
-              {tab.label}
+              <span className="flex items-center gap-2">
+                <Icon className={`w-3 h-3 shrink-0 ${isActive ? "opacity-40" : "opacity-30"}`} />
+                {tab.label}
+              </span>
             </button>
           );
         })}
@@ -313,10 +342,10 @@ export default function GrowthProgramWindow() {
       {filteredItems.map((item, i) => (
         <div
           key={`${item.title}-${i}`}
-          className="flex items-center border-b border-black/10 px-6 py-5 group program-row-hover cursor-pointer transition-colors"
+          className="flex items-center border-b border-black/10 px-6 py-5 group program-row-hover transition-colors"
         >
           <div className="w-28 shrink-0 text-xs font-mono-ui flex items-center gap-2.5">
-            <div className="w-2 h-2 bg-black shrink-0" />
+            <span className="gp-square" style={{ animationDelay: `${i * 0.4}s` }} />
             {item.path}
           </div>
           <div className="flex-1 text-xl md:text-2xl font-medium leading-tight">

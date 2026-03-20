@@ -38,6 +38,28 @@ import {
   Sparkles,
 } from "lucide-react";
 import V2Nav from "../V2Nav";
+import GlowButton from "../GlowButton";
+
+/* ─── FadingLines separator ─── */
+
+const fadingLines = [
+  { y: 0, opacity: 0.10 }, { y: 3, opacity: 0.09 }, { y: 7, opacity: 0.08 },
+  { y: 12, opacity: 0.07 }, { y: 18, opacity: 0.06 }, { y: 25, opacity: 0.05 },
+  { y: 33, opacity: 0.04 }, { y: 42, opacity: 0.03 }, { y: 52, opacity: 0.02 },
+  { y: 59, opacity: 0.01 },
+];
+function FadingLines() {
+  return (
+    <>
+      <div className="relative" style={{ height: 60, minHeight: 40, width: "100vw", marginLeft: "calc(-50vw + 50%)" }}>
+        {fadingLines.map((line, i) => (
+          <div key={i} className="absolute left-0 right-0" style={{ top: line.y, height: 1, backgroundColor: `rgba(0,0,0,${line.opacity})` }} />
+        ))}
+      </div>
+      <div style={{ height: 40 }} />
+    </>
+  );
+}
 
 /* ─── "What You Unlock" toggle data ─── */
 
@@ -227,17 +249,20 @@ const companyLogos = ["Envoy", "Clearbit", "Microsoft", "Segment", "Sentry", "Ze
 
 /* ─── Course card component ─── */
 
-function CourseCard({ tag, tagColor, title, desc }: { tag: string; tagColor: string; title: string; desc: string }) {
+function CourseCard({ tag, tagColor, title, desc, index }: { tag: string; tagColor: string; title: string; desc: string; index: number }) {
   const colorMap: Record<string, string> = {
     blue: "bg-blue-50 text-blue-600 border-blue-200",
     red: "bg-red-50 text-red-600 border-red-200",
     green: "bg-green-50 text-green-600 border-green-200",
   };
   return (
-    <div className="border border-black/10 rounded-lg p-5 hover:shadow-md transition-shadow duration-300 cursor-pointer group">
-      <span className={`inline-block text-[10px] font-mono-ui tracking-widest px-2 py-0.5 rounded border mb-4 ${colorMap[tagColor] || colorMap.blue}`}>
-        {tag}
-      </span>
+    <div className="border border-black/10 rounded-sm p-5 program-row-hover cursor-pointer group transition-colors">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="gp-square" style={{ animationDelay: `${index * 0.3}s` }} />
+        <span className={`text-[10px] font-mono-ui tracking-widest px-2 py-0.5 border ${colorMap[tagColor] || colorMap.blue}`}>
+          {tag}
+        </span>
+      </div>
       <h4 className="font-heading text-base font-semibold mb-2 group-hover:text-black transition-colors">{title}</h4>
       <p className="text-neutral-500 text-xs leading-relaxed">{desc}</p>
     </div>
@@ -248,7 +273,7 @@ function CourseCard({ tag, tagColor, title, desc }: { tag: string; tagColor: str
 
 function PathCard({ title, duration, desc }: { title: string; duration: string; desc: string }) {
   return (
-    <div className="border border-black/10 rounded-lg p-6 hover:shadow-md transition-shadow duration-300 cursor-pointer group">
+    <div className="border border-black/10 rounded-sm p-6 program-row-hover cursor-pointer group transition-colors">
       <div className="flex justify-between items-start mb-3">
         <h4 className="font-heading text-lg font-semibold group-hover:text-black transition-colors">{title}</h4>
         <span className="font-mono-ui text-[10px] tracking-widest text-neutral-400 shrink-0 ml-4">{duration}</span>
@@ -275,12 +300,36 @@ export default function GrowthProgramPage() {
   ];
 
   return (
-    <div className="v2-world v2-bg text-[#1a1a1a] text-sm overflow-x-hidden selection:bg-yellow-200 selection:text-black" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}>
+    <div className="v2-world v2-bg text-[#1a1a1a] text-sm selection:bg-yellow-200 selection:text-black" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace", position: "relative", zIndex: 2, overflowX: "clip" }}>
+      {/* ── Side borders + checkerboard ── */}
+      <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 50 }}>
+        <div className="absolute top-0 bottom-0" style={{ left: 16, borderLeft: "1px solid rgba(0,0,0,0.10)" }} />
+        <div className="absolute top-0 bottom-0" style={{ right: 16, borderRight: "1px solid rgba(0,0,0,0.10)" }} />
+        <div
+          className="absolute top-0 bottom-0 left-0"
+          style={{
+            width: 16,
+            background: "repeating-conic-gradient(#e4e8ec 0% 25%, #eef1f4 0% 50%) 0 0 / 5px 5px",
+          }}
+        />
+        <div
+          className="absolute top-0 bottom-0 right-0"
+          style={{
+            width: 16,
+            background: "repeating-conic-gradient(#e4e8ec 0% 25%, #eef1f4 0% 50%) 0 0 / 5px 5px",
+          }}
+        />
+      </div>
+
       <V2Nav currentPage="GROWTH PROGRAM" />
 
+      {/* Main content inside 17px side borders */}
+      <div className="relative v2-bg" style={{ margin: "0 17px", zIndex: 3 }}>
+        <div className="px-6">
+
       {/* Hero */}
-      <header className="md:pt-32 md:pb-24 max-w-[1200px] mx-auto pt-24 px-4 pb-20 relative">
-        <div className="font-mono-ui text-xs tracking-widest uppercase text-neutral-400 mb-6">/ GROWTH PROGRAM</div>
+      <header className="md:pt-32 md:pb-24 max-w-[1200px] mx-auto pt-24 pb-20 relative">
+        <div className="section-tag mb-8">Growth Program</div>
         <h1 className="font-heading text-5xl md:text-7xl lg:text-8xl leading-[0.9] tracking-tight mb-8">
           Build your<br />growth system
         </h1>
@@ -288,8 +337,8 @@ export default function GrowthProgramPage() {
           Everything you need to architect and launch your startup&apos;s growth — strategy, channels, messaging, and more. The DIY path to a repeatable growth engine.
         </p>
         <div className="flex flex-wrap gap-4 mb-16">
-          <a href="#pricing" className="bg-black text-white px-6 py-3 rounded-sm hover:bg-neutral-800 transition-colors font-medium text-base flex items-center gap-2">
-            Get Started <ArrowRight className="w-4 h-4" />
+          <a href="#pricing" className="glow-btn relative px-6 py-3 rounded-md font-medium text-sm flex items-center gap-2 overflow-hidden">
+            <span className="relative z-10 flex items-center gap-2">Get Started <ArrowRight className="w-4 h-4" /></span>
           </a>
           <a href="#library" className="rainbow-hover border border-black/20 px-6 py-3 rounded-sm hover:bg-black/5 transition-colors font-medium text-base">
             Explore the Curriculum
@@ -302,16 +351,24 @@ export default function GrowthProgramPage() {
         </div>
       </header>
 
-      {/* Logo Wall */}
-      <div className="border-y border-black/10 py-6 max-w-[1200px] mx-auto px-4">
-        <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4 font-mono-ui text-xs tracking-widest text-neutral-300 uppercase">
-          {companyLogos.map((logo) => (<span key={logo}>{logo}</span>))}
+      {/* Logo Wall — scrolling marquee */}
+      <div className="border-y border-black/10 py-4 overflow-hidden">
+        <div className="marquee-content whitespace-nowrap">
+          {[0, 1].map((i) => (
+            <span key={i} className="flex items-center">
+              {companyLogos.map((logo, j) => (
+                <span key={`${i}-${j}`} className="px-8 font-heading text-lg font-medium text-neutral-400 tracking-tight">{logo}</span>
+              ))}
+            </span>
+          ))}
         </div>
       </div>
 
+      <FadingLines />
+
       {/* Why We Built DC */}
-      <section className="max-w-[1200px] mx-auto px-4 py-20 md:py-28">
-        <div className="font-mono-ui text-xs tracking-widest uppercase text-neutral-400 mb-6">/ WHY WE BUILT THIS</div>
+      <section className="max-w-[1200px] mx-auto py-20 md:py-28">
+        <div className="section-tag mb-6">Why We Built This</div>
         <div className="max-w-3xl">
           <h2 className="font-heading text-3xl md:text-5xl leading-tight tracking-tight mb-8">
             &ldquo;The traditional paths to growth were broken.&rdquo;
@@ -326,72 +383,79 @@ export default function GrowthProgramPage() {
       </section>
 
       {/* ═══ WHAT YOU UNLOCK — Toggle Section ═══ */}
-      <section className="max-w-[1200px] mx-auto px-4 pb-20 md:pb-28">
-        <div className="font-mono-ui text-xs tracking-widest uppercase text-neutral-400 mb-6">/ WHAT YOU UNLOCK</div>
+      <section className="max-w-[1200px] mx-auto pb-20 md:pb-28">
+        <div className="section-tag mb-6">What You Unlock</div>
         <h2 className="font-heading text-3xl md:text-4xl tracking-tight mb-12">
           What you unlock with your Demand Curve membership
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-[340px_1fr] gap-0 border border-black/[0.07] rounded-2xl overflow-hidden" style={{ boxShadow: '0 0 40px rgba(0,0,0,0.04)' }}>
-          {/* Left column — toggles */}
-          <div className="border-r border-black/[0.07] bg-gradient-to-b from-white/60 to-transparent">
-            {unlockTabs.map((tab) => {
-              const isActive = activeUnlock === tab.key;
-              return (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveUnlock(tab.key)}
-                  className={`w-full text-left px-6 py-5 flex items-start gap-4 border-b border-black/[0.05] last:border-b-0 transition-colors duration-200 group ${
-                    isActive ? "bg-white/80" : "hover:bg-white/40"
-                  }`}
-                >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                    isActive ? "bg-neutral-100" : "bg-neutral-50 group-hover:bg-neutral-100"
-                  }`}>
-                    <tab.icon className={`w-5 h-5 ${isActive ? "text-neutral-700" : "text-neutral-400"}`} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className={`text-sm font-semibold mb-0.5 transition-colors ${isActive ? "text-black" : "text-neutral-600"}`}>
-                      {tab.title}
-                    </div>
-                    <div className="text-neutral-400 text-xs leading-relaxed">{tab.description}</div>
-                  </div>
-                  <ChevronRight className={`w-4 h-4 mt-1 shrink-0 transition-colors ${isActive ? "text-neutral-400" : "text-neutral-200"}`} />
-                </button>
-              );
-            })}
-          </div>
+        <div className="relative">
+          {/* Corner caps */}
+          <div className="absolute -top-px -left-px w-4 h-4 border-t-2 border-l-2 border-black" />
+          <div className="absolute -top-px -right-px w-4 h-4 border-t-2 border-r-2 border-black" />
+          <div className="absolute -bottom-px -left-px w-4 h-4 border-b-2 border-l-2 border-black" />
+          <div className="absolute -bottom-px -right-px w-4 h-4 border-b-2 border-r-2 border-black" />
 
-          {/* Right column — content */}
-          <div className="p-8 md:p-10">
-            <h3 className="font-heading text-2xl md:text-3xl font-medium tracking-tight mb-2">
-              {activeUnlockData.contentTitle}
-            </h3>
-            <p className="text-neutral-500 text-sm mb-8">{activeUnlockData.contentSub}</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {activeUnlockData.items.map((item, i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-neutral-50 flex items-center justify-center shrink-0">
-                    <item.icon className="w-4 h-4 text-neutral-500" />
+          <div className="grid grid-cols-1 md:grid-cols-[340px_1fr] gap-0 border border-black/[0.07] rounded-sm overflow-hidden">
+            {/* Left column — toggles */}
+            <div className="border-r border-black/[0.07] bg-gradient-to-b from-white/60 to-transparent">
+              {unlockTabs.map((tab, tabIdx) => {
+                const isActive = activeUnlock === tab.key;
+                return (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveUnlock(tab.key)}
+                    className={`w-full text-left px-6 py-5 flex items-start gap-4 border-b border-black/[0.05] last:border-b-0 transition-colors duration-200 group ${
+                      isActive ? "bg-white/80" : "hover:bg-white/40"
+                    }`}
+                  >
+                    <span className="gp-square mt-1.5 shrink-0" style={{ animationDelay: `${tabIdx * 0.4}s` }} />
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-sm font-semibold mb-0.5 transition-colors ${isActive ? "text-black" : "text-neutral-600"}`}>
+                        {tab.title}
+                      </div>
+                      <div className="text-neutral-400 text-xs leading-relaxed">{tab.description}</div>
+                    </div>
+                    <ChevronRight className={`w-4 h-4 mt-1 shrink-0 transition-colors ${isActive ? "text-neutral-400" : "text-neutral-200"}`} />
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Right column — content */}
+            <div className="p-8 md:p-10">
+              <h3 className="font-heading text-2xl md:text-3xl font-medium tracking-tight mb-2">
+                {activeUnlockData.contentTitle}
+              </h3>
+              <p className="text-neutral-500 text-sm mb-8">{activeUnlockData.contentSub}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {activeUnlockData.items.map((item, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-neutral-50 flex items-center justify-center shrink-0">
+                      <item.icon className="w-4 h-4 text-neutral-500" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold mb-0.5">{item.title}</div>
+                      <div className="text-neutral-500 text-xs leading-relaxed">{item.desc}</div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-sm font-semibold mb-0.5">{item.title}</div>
-                    <div className="text-neutral-500 text-xs leading-relaxed">{item.desc}</div>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Social Proof — Stats */}
-      <section className="max-w-[1200px] mx-auto px-4 py-20 md:py-28 border-t border-black/10">
-        <div className="font-mono-ui text-xs tracking-widest uppercase text-neutral-400 mb-12">/ RESULTS</div>
+      <section className="max-w-[1200px] mx-auto py-20 md:py-28 border-t border-black/10">
+        <div className="section-tag mb-8">Results</div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {testimonials.map((t, i) => (
-            <div key={i} className="border border-black/10 rounded-sm p-6 hover:bg-white transition-colors duration-300">
-              <div className="font-mono-ui text-[10px] tracking-widest text-neutral-400 mb-2">{t.category.toUpperCase()}</div>
+            <div key={i} className="border border-black/10 rounded-sm p-6 program-row-hover cursor-pointer transition-colors duration-300">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="gp-square" style={{ animationDelay: `${i * 0.5}s` }} />
+                <span className="font-mono-ui text-[10px] tracking-widest text-neutral-400">{t.category.toUpperCase()}</span>
+              </div>
               <div className="text-2xl md:text-3xl font-medium mb-4 tracking-tight">{t.stat}</div>
               <p className="text-neutral-600 text-sm mb-6 italic">&ldquo;{t.quote}&rdquo;</p>
               <div className="font-mono-ui text-xs text-neutral-400">{t.name} — {t.title}</div>
@@ -402,7 +466,7 @@ export default function GrowthProgramPage() {
 
       {/* ═══ COURSE LIBRARY — Tabbed Section ═══ */}
       <section id="library" className="border-y border-black/10">
-        <div className="max-w-[1200px] mx-auto px-4 py-20 md:py-28">
+        <div className="max-w-[1200px] mx-auto py-20 md:py-28">
           <h2 className="font-heading text-3xl md:text-5xl tracking-tight mb-4 text-center">
             Everything you need to build a growth engine
           </h2>
@@ -410,30 +474,28 @@ export default function GrowthProgramPage() {
             Unlock a growing library of 50+ premium courses, 560+ proven tactics, and 290+ deep-dive playbooks.
           </p>
 
-          {/* Tab bar */}
-          <div className="flex justify-center mb-10">
-            <div className="inline-flex bg-neutral-100 rounded-full p-1">
-              {libraryTabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveLibraryTab(tab.key)}
-                  className={`px-5 py-2 rounded-full text-sm transition-all duration-200 ${
-                    activeLibraryTab === tab.key
-                      ? "bg-white text-black shadow-sm font-medium"
-                      : "text-neutral-500 hover:text-neutral-700"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+          {/* Tab bar — editorial style */}
+          <div className="flex border-b border-black/10 mb-10">
+            {libraryTabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveLibraryTab(tab.key)}
+                className={`px-5 py-3 text-sm font-mono-ui border-r border-black/10 transition-colors ${
+                  activeLibraryTab === tab.key
+                    ? "bg-white text-black font-medium relative -mb-px border-b border-white"
+                    : "text-neutral-400 hover:text-black"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
 
           {/* Tab content */}
           {activeLibraryTab === "popular" && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {mostPopularCourses.map((c, i) => (
-                <CourseCard key={i} {...c} />
+                <CourseCard key={i} {...c} index={i} />
               ))}
             </div>
           )}
@@ -449,7 +511,7 @@ export default function GrowthProgramPage() {
           {activeLibraryTab === "acquisition" && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {acquisitionCourses.map((c, i) => (
-                <CourseCard key={i} {...c} />
+                <CourseCard key={i} {...c} index={i} />
               ))}
             </div>
           )}
@@ -457,7 +519,7 @@ export default function GrowthProgramPage() {
           {activeLibraryTab === "conversion" && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {conversionCourses.map((c, i) => (
-                <CourseCard key={i} {...c} />
+                <CourseCard key={i} {...c} index={i} />
               ))}
             </div>
           )}
@@ -465,11 +527,14 @@ export default function GrowthProgramPage() {
       </section>
 
       {/* More Testimonials */}
-      <section className="max-w-[1200px] mx-auto px-4 py-20 md:py-28">
-        <div className="font-mono-ui text-xs tracking-widest uppercase text-neutral-400 mb-12">/ WHAT FOUNDERS ARE SAYING</div>
+      <section className="max-w-[1200px] mx-auto py-20 md:py-28">
+        <div className="section-tag mb-8">What Founders Are Saying</div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {moreTestimonials.map((t, i) => (
-            <div key={i} className="border border-black/10 rounded-sm p-6 hover:bg-white transition-colors duration-300">
+            <div key={i} className="border border-black/10 rounded-sm p-6 program-row-hover cursor-pointer transition-colors duration-300">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="gp-square" style={{ animationDelay: `${i * 0.4}s` }} />
+              </div>
               <p className="text-neutral-700 text-sm mb-6 leading-relaxed">&ldquo;{t.quote}&rdquo;</p>
               <div className="font-mono-ui text-xs text-neutral-400">{t.name} — {t.title}</div>
             </div>
@@ -477,37 +542,45 @@ export default function GrowthProgramPage() {
         </div>
       </section>
 
+      <FadingLines />
+
       {/* Comparison */}
       <section className="border-y border-black/10">
-        <div className="max-w-[1200px] mx-auto px-4 py-20 md:py-28">
-          <div className="font-mono-ui text-xs tracking-widest uppercase text-neutral-400 mb-6">/ COMPARE</div>
+        <div className="max-w-[1200px] mx-auto py-20 md:py-28">
+          <div className="section-tag mb-6">Compare</div>
           <h2 className="font-heading text-3xl md:text-4xl tracking-tight mb-12">There&apos;s a better way to grow your startup</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-black/10 border border-black/10 rounded-sm overflow-hidden">
-            <div className="bg-[#f7f7f4] p-6">
-              <div className="font-mono-ui text-[10px] tracking-widest text-neutral-400 mb-4">THE OLD WAY</div>
-              <h3 className="font-heading text-lg font-medium mb-6">Growth Advisors</h3>
-              <div className="space-y-4 text-xs text-neutral-600">
-                <div><div className="font-mono-ui text-[10px] text-neutral-400 mb-1">COST</div>$5,000-15,000/month for strategic guidance. No execution.</div>
-                <div><div className="font-mono-ui text-[10px] text-neutral-400 mb-1">TIME TO VALUE</div>2-4 months to see if advice translates to results.</div>
-                <div><div className="font-mono-ui text-[10px] text-neutral-400 mb-1">RISK</div>Medium-high. Great advice means nothing if you can&apos;t execute.</div>
+          <div className="relative">
+            <div className="absolute -top-px -left-px w-4 h-4 border-t-2 border-l-2 border-black" />
+            <div className="absolute -top-px -right-px w-4 h-4 border-t-2 border-r-2 border-black" />
+            <div className="absolute -bottom-px -left-px w-4 h-4 border-b-2 border-l-2 border-black" />
+            <div className="absolute -bottom-px -right-px w-4 h-4 border-b-2 border-r-2 border-black" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-black/10 border border-black/10 rounded-sm overflow-hidden">
+              <div className="bg-[#f7f7f4] p-6">
+                <div className="font-mono-ui text-[10px] tracking-widest text-neutral-400 mb-4">THE OLD WAY</div>
+                <h3 className="font-heading text-lg font-medium mb-6">Growth Advisors</h3>
+                <div className="space-y-4 text-xs text-neutral-600">
+                  <div><div className="font-mono-ui text-[10px] text-neutral-400 mb-1">COST</div>$5,000-15,000/month for strategic guidance. No execution.</div>
+                  <div><div className="font-mono-ui text-[10px] text-neutral-400 mb-1">TIME TO VALUE</div>2-4 months to see if advice translates to results.</div>
+                  <div><div className="font-mono-ui text-[10px] text-neutral-400 mb-1">RISK</div>Medium-high. Great advice means nothing if you can&apos;t execute.</div>
+                </div>
               </div>
-            </div>
-            <div className="bg-[#f7f7f4] p-6">
-              <div className="font-mono-ui text-[10px] tracking-widest text-neutral-400 mb-4">THE OLD WAY</div>
-              <h3 className="font-heading text-lg font-medium mb-6">Courses</h3>
-              <div className="space-y-4 text-xs text-neutral-600">
-                <div><div className="font-mono-ui text-[10px] text-neutral-400 mb-1">COST</div>$100-$2,000. But your time is the real cost.</div>
-                <div><div className="font-mono-ui text-[10px] text-neutral-400 mb-1">TIME TO VALUE</div>Slow. Weeks of learning, very little doing.</div>
-                <div><div className="font-mono-ui text-[10px] text-neutral-400 mb-1">RISK</div>High. Generic advice, zero personalization.</div>
+              <div className="bg-[#f7f7f4] p-6">
+                <div className="font-mono-ui text-[10px] tracking-widest text-neutral-400 mb-4">THE OLD WAY</div>
+                <h3 className="font-heading text-lg font-medium mb-6">Courses</h3>
+                <div className="space-y-4 text-xs text-neutral-600">
+                  <div><div className="font-mono-ui text-[10px] text-neutral-400 mb-1">COST</div>$100-$2,000. But your time is the real cost.</div>
+                  <div><div className="font-mono-ui text-[10px] text-neutral-400 mb-1">TIME TO VALUE</div>Slow. Weeks of learning, very little doing.</div>
+                  <div><div className="font-mono-ui text-[10px] text-neutral-400 mb-1">RISK</div>High. Generic advice, zero personalization.</div>
+                </div>
               </div>
-            </div>
-            <div className="bg-white p-6 ring-1 ring-black/20">
-              <div className="font-mono-ui text-[10px] tracking-widest text-black mb-4">THE NEW WAY</div>
-              <h3 className="font-heading text-lg font-medium mb-6">Demand Curve</h3>
-              <div className="space-y-4 text-xs text-neutral-600">
-                <div><div className="font-mono-ui text-[10px] text-neutral-400 mb-1">COST</div><span className="text-black font-medium">$995/year</span> (or $300/quarter)</div>
-                <div><div className="font-mono-ui text-[10px] text-neutral-400 mb-1">TIME TO VALUE</div><span className="text-black font-medium">Day one.</span> Your path tells you what to do.</div>
-                <div><div className="font-mono-ui text-[10px] text-neutral-400 mb-1">RISK</div><span className="text-black font-medium">Low.</span> 7-day money-back guarantee.</div>
+              <div className="bg-white p-6 ring-1 ring-black/20">
+                <div className="font-mono-ui text-[10px] tracking-widest text-black mb-4">THE NEW WAY</div>
+                <h3 className="font-heading text-lg font-medium mb-6">Demand Curve</h3>
+                <div className="space-y-4 text-xs text-neutral-600">
+                  <div><div className="font-mono-ui text-[10px] text-neutral-400 mb-1">COST</div><span className="text-black font-medium">$995/year</span> (or $300/quarter)</div>
+                  <div><div className="font-mono-ui text-[10px] text-neutral-400 mb-1">TIME TO VALUE</div><span className="text-black font-medium">Day one.</span> Your path tells you what to do.</div>
+                  <div><div className="font-mono-ui text-[10px] text-neutral-400 mb-1">RISK</div><span className="text-black font-medium">Low.</span> 7-day money-back guarantee.</div>
+                </div>
               </div>
             </div>
           </div>
@@ -515,8 +588,8 @@ export default function GrowthProgramPage() {
       </section>
 
       {/* Is It Right For You */}
-      <section className="max-w-[1200px] mx-auto px-4 py-20 md:py-28">
-        <div className="font-mono-ui text-xs tracking-widest uppercase text-neutral-400 mb-6">/ FIT CHECK</div>
+      <section className="max-w-[1200px] mx-auto py-20 md:py-28">
+        <div className="section-tag mb-6">Fit Check</div>
         <h2 className="font-heading text-3xl md:text-4xl tracking-tight mb-12">Is the Growth Program right for you?</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
           <div>
@@ -524,7 +597,7 @@ export default function GrowthProgramPage() {
             <div className="space-y-3">
               {fitItems.map((item, i) => (
                 <div key={i} className="flex gap-3 items-start">
-                  <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
+                  <span className="gp-square mt-1 shrink-0" style={{ animationDelay: `${i * 0.4}s` }} />
                   <span className="text-neutral-700 text-sm">{item}</span>
                 </div>
               ))}
@@ -546,8 +619,8 @@ export default function GrowthProgramPage() {
 
       {/* Pricing */}
       <section id="pricing" className="border-y border-black/10">
-        <div className="max-w-[1200px] mx-auto px-4 py-20 md:py-28">
-          <div className="font-mono-ui text-xs tracking-widest uppercase text-neutral-400 mb-6">/ PRICING</div>
+        <div className="max-w-[1200px] mx-auto py-20 md:py-28">
+          <div className="section-tag mb-6">Pricing</div>
           <h2 className="font-heading text-3xl md:text-4xl tracking-tight mb-4">One simple, flexible membership</h2>
           <p className="text-neutral-600 font-light text-base mb-12">Start building your growth strategy today.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl">
@@ -555,18 +628,25 @@ export default function GrowthProgramPage() {
               <div className="font-mono-ui text-[10px] tracking-widest text-neutral-400 mb-4">QUARTERLY</div>
               <div className="text-4xl font-medium mb-1">$100<span className="text-lg text-neutral-400 font-light">/mo</span></div>
               <div className="text-neutral-500 text-xs mb-6">Billed quarterly ($300/quarter)</div>
-              <button className="w-full bg-black text-white py-3 rounded-sm hover:bg-neutral-800 transition-colors font-medium text-sm flex items-center justify-center gap-2">
-                Get Started <ArrowRight className="w-4 h-4" />
-              </button>
+              <a href="#" className="glow-btn relative w-full py-3 rounded-md font-medium text-sm flex items-center justify-center gap-2 overflow-hidden">
+                <span className="relative z-10 flex items-center gap-2">Get Started <ArrowRight className="w-4 h-4" /></span>
+              </a>
             </div>
-            <div className="border border-black/20 rounded-sm p-6 bg-white ring-1 ring-black/10 relative">
-              <div className="absolute -top-3 right-4 font-mono-ui text-[10px] tracking-widest bg-black text-white px-2 py-0.5 rounded-sm">SAVE 17%</div>
-              <div className="font-mono-ui text-[10px] tracking-widest text-neutral-400 mb-4">ANNUAL</div>
-              <div className="text-4xl font-medium mb-1">$83<span className="text-lg text-neutral-400 font-light">/mo</span></div>
-              <div className="text-neutral-500 text-xs mb-6">Billed annually ($995/year — save $205)</div>
-              <button className="w-full bg-black text-white py-3 rounded-sm hover:bg-neutral-800 transition-colors font-medium text-sm flex items-center justify-center gap-2">
-                Get Started <ArrowRight className="w-4 h-4" />
-              </button>
+            <div className="relative">
+              {/* Corner caps on annual card */}
+              <div className="absolute -top-px -left-px w-4 h-4 border-t-2 border-l-2 border-black" />
+              <div className="absolute -top-px -right-px w-4 h-4 border-t-2 border-r-2 border-black" />
+              <div className="absolute -bottom-px -left-px w-4 h-4 border-b-2 border-l-2 border-black" />
+              <div className="absolute -bottom-px -right-px w-4 h-4 border-b-2 border-r-2 border-black" />
+              <div className="border border-black/20 rounded-sm p-6 bg-white ring-1 ring-black/10 relative">
+                <div className="absolute -top-3 right-4 font-mono-ui text-[10px] tracking-widest bg-black text-white px-2 py-0.5 rounded-sm">SAVE 17%</div>
+                <div className="font-mono-ui text-[10px] tracking-widest text-neutral-400 mb-4">ANNUAL</div>
+                <div className="text-4xl font-medium mb-1">$83<span className="text-lg text-neutral-400 font-light">/mo</span></div>
+                <div className="text-neutral-500 text-xs mb-6">Billed annually ($995/year — save $205)</div>
+                <a href="#" className="glow-btn relative w-full py-3 rounded-md font-medium text-sm flex items-center justify-center gap-2 overflow-hidden">
+                  <span className="relative z-10 flex items-center gap-2">Get Started <ArrowRight className="w-4 h-4" /></span>
+                </a>
+              </div>
             </div>
           </div>
           <div className="mt-12 max-w-3xl">
@@ -591,45 +671,77 @@ export default function GrowthProgramPage() {
       </section>
 
       {/* FAQs */}
-      <section className="max-w-[1200px] mx-auto px-4 py-20 md:py-28">
-        <div className="font-mono-ui text-xs tracking-widest uppercase text-neutral-400 mb-6">/ FAQs</div>
+      <section className="max-w-[1200px] mx-auto py-20 md:py-28">
+        <div className="section-tag mb-6">FAQs</div>
         <h2 className="font-heading text-3xl md:text-4xl tracking-tight mb-12">Everything you need to know</h2>
         <div className="max-w-3xl space-y-0 divide-y divide-black/10">
           {faqs.map((faq, i) => (
             <details key={i} className="group py-6 cursor-pointer">
-              <summary className="rainbow-hover flex justify-between items-center list-none">
-                <span className="font-heading text-base font-medium pr-4">{faq.q}</span>
+              <summary className="rainbow-hover flex items-center list-none gap-3">
+                <span className="gp-square shrink-0" style={{ animationDelay: `${i * 0.5}s` }} />
+                <span className="font-heading text-base font-medium pr-4 flex-1">{faq.q}</span>
                 <ChevronDown className="w-4 h-4 text-neutral-400 shrink-0 group-open:rotate-180 transition-transform" />
               </summary>
-              <p className="mt-4 text-neutral-600 text-sm leading-relaxed">{faq.a}</p>
+              <p className="mt-4 ml-7 text-neutral-600 text-sm leading-relaxed">{faq.a}</p>
             </details>
           ))}
         </div>
       </section>
 
+      <FadingLines />
+
       {/* Newsletter CTA */}
       <section className="border-t border-black/10">
-        <div className="max-w-[1200px] mx-auto px-4 py-20 md:py-28 text-center">
+        <div className="max-w-[1200px] mx-auto py-20 md:py-28 text-center">
+          {/* Ornamental top rule */}
+          <div className="flex items-center gap-2 mb-8 max-w-md mx-auto">
+            <div className="flex-1 h-px bg-black/80" />
+            <div className="w-1.5 h-1.5 border border-black rotate-45" />
+            <span className="diamond-cycle" />
+            <div className="w-1.5 h-1.5 border border-black rotate-45" />
+            <div className="flex-1 h-px bg-black/80" />
+          </div>
           <h2 className="font-heading text-3xl md:text-4xl tracking-tight mb-4">Not ready yet? Learn from us for free.</h2>
-          <p className="text-neutral-600 font-light text-base mb-8 max-w-xl mx-auto">Join 90,000+ founders getting weekly insights that actually help them grow.</p>
+          <p className="text-neutral-600 font-light text-base mb-8 max-w-xl mx-auto flex items-center justify-center gap-2">
+            <span className="marquee-square" />
+            Join 90,000+ founders getting weekly insights that actually help them grow.
+          </p>
           <div className="flex max-w-md mx-auto gap-2">
             <input type="email" placeholder="you@company.com" className="flex-1 border border-black/15 rounded-sm px-4 py-3 text-sm bg-transparent focus:outline-none focus:ring-1 focus:ring-black/20 placeholder:text-neutral-400" />
-            <button className="bg-black text-white px-5 py-3 rounded-sm hover:bg-neutral-800 transition-colors text-sm font-medium shrink-0">Subscribe</button>
+            <a className="glow-btn relative px-5 py-3 rounded-md text-sm font-medium shrink-0 flex items-center overflow-hidden cursor-pointer">
+              <span className="relative z-10">Subscribe</span>
+            </a>
+          </div>
+          {/* Ornamental bottom rule */}
+          <div className="flex items-center gap-2 mt-8 max-w-md mx-auto">
+            <div className="flex-1 h-px bg-black/80" />
+            <div className="w-1.5 h-1.5 border border-black rotate-45" />
+            <span className="diamond-cycle" />
+            <div className="w-1.5 h-1.5 border border-black rotate-45" />
+            <div className="flex-1 h-px bg-black/80" />
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-black/10 py-8">
-        <div className="max-w-[1200px] mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="font-mono-ui text-xs text-neutral-400">&copy; 2026 Demand Curve</div>
-          <div className="flex gap-6 font-mono-ui text-xs text-neutral-400">
-            <a href="/v2" className="rainbow-hover hover:text-black transition-colors">Home</a>
-            <a href="#" className="rainbow-hover hover:text-black transition-colors">Terms</a>
-            <a href="#" className="rainbow-hover hover:text-black transition-colors">Privacy</a>
+      <footer className="border-t border-black/10 pt-8 pb-8">
+        <div className="flex justify-between items-end font-mono-ui text-xs text-neutral-500 uppercase">
+          <div className="flex items-center gap-4">
+            <div className="w-4 h-4 rounded-full border border-black/20 flex items-center justify-center">
+              <span className="text-[8px] font-serif font-bold">D</span>
+            </div>
+            <span>&copy; 2026 Demand Curve</span>
+          </div>
+          <div className="flex gap-6">
+            <a href="/v2" className="rainbow-hover hover:text-black">Home</a>
+            <a href="#" className="rainbow-hover hover:text-black">Privacy</a>
+            <a href="#" className="rainbow-hover hover:text-black">Terms</a>
           </div>
         </div>
       </footer>
+
+        </div>{/* end px-6 */}
+      </div>{/* end margin wrapper */}
     </div>
   );
 }

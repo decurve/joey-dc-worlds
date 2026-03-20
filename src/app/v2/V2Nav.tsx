@@ -3,6 +3,7 @@
 import { Search, ArrowUpRight, ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useHeroVisual } from "./HeroVisualContext";
+import GlowButton from "./GlowButton";
 import { heroVisuals } from "./HeroVisuals";
 import type { HeroVisualId } from "./HeroVisuals";
 
@@ -102,6 +103,8 @@ function HeroVisualDropdown() {
     <div ref={ref} className="relative hidden md:block">
       <button
         onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-haspopup="listbox"
         className="nav-pill flex items-center gap-1.5 transition-colors v2-nav-hover hover:text-black"
       >
         <span className="opacity-40">[V]</span> VISUAL
@@ -109,7 +112,7 @@ function HeroVisualDropdown() {
       </button>
       {open && (
         <div
-          className="absolute right-0 top-full mt-2 w-64 border border-black/10 bg-[#f9f9f8]/95 backdrop-blur-sm shadow-lg z-50"
+          className="absolute right-0 top-full mt-2 w-64 border border-black/10 bg-[#f9f9f8]/95 backdrop-blur-sm shadow-lg z-50 dropdown-animate"
           style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace" }}
         >
           <div className="px-3 py-2 border-b border-black/10 font-mono-ui text-[10px] uppercase tracking-widest text-neutral-400">
@@ -136,80 +139,64 @@ function HeroVisualDropdown() {
 type V2NavProps = {
   currentPage?: string;
   variant?: "light" | "dark";
+  minimal?: boolean;
+  searchSlot?: React.ReactNode;
 };
 
-export default function V2Nav({ currentPage, variant = "light" }: V2NavProps) {
+export default function V2Nav({ currentPage, variant = "light", minimal = false, searchSlot }: V2NavProps) {
   const isDark = variant === "dark";
 
   const pillClass = isDark ? "v2-nav-pill-dark" : "nav-pill";
   const hoverClass = isDark ? "v2-nav-hover-dark" : "v2-nav-hover";
 
   return (
-    <div
-      className="fixed top-0 left-0 right-0 z-50"
-      style={{
-        background: isDark ? "rgba(10,10,10,0.85)" : "rgba(249,249,248,0.6)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
-      }}
-    >
     <nav
-      className={`flex items-center font-mono-ui text-xs tracking-wide ${
+      aria-label="Primary navigation"
+      className={`fixed top-0 left-0 right-0 z-50 flex items-center font-mono-ui text-xs tracking-wide ${
         isDark ? "text-neutral-400" : "text-neutral-600"
       }`}
       style={{ padding: "12px 24px" }}
     >
-      {/* DC Logo — pinned left */}
-      <div className="flex items-center gap-3 shrink-0">
+      {/* DC Logo + Nav links — left aligned together */}
+      <div className="flex items-center gap-4 shrink-0">
         <a
           href="/v2"
           className={`${pillClass} font-semibold flex items-center gap-2 text-sm hover:opacity-80 transition-opacity ${
             isDark ? "text-white" : "text-black"
           }`}
         >
-          <div className={`w-3 h-3 rounded-full ${isDark ? "bg-white" : "bg-black"}`} /> DC
+          <span className={`w-3 h-3 rounded-full ${isDark ? "bg-white" : "bg-black"}`} aria-hidden="true" /> DC
         </a>
 
-        {/* ASCII Glitch Boxes */}
-        <AsciiBoxes isDark={isDark} />
+        {!minimal && <div className="hidden md:flex gap-3">
+          {navLinks.map((link) => {
+            const isActive = currentPage === link.label;
+            const activeColor = isDark ? "text-white" : "text-black";
+
+            return (
+              <a
+                key={link.key}
+                href={link.href}
+                aria-current={isActive ? "page" : undefined}
+                className={`${pillClass} transition-colors ${
+                  isActive ? activeColor : `${hoverClass} ${isDark ? "hover:text-white" : "hover:text-black"}`
+                }`}
+              >
+                {link.label}
+                {link.icon && <link.icon className="w-3 h-3 inline-block -mt-0.5 ml-0.5" />}
+              </a>
+            );
+          })}
+        </div>}
       </div>
 
-      {/* Nav links — centered */}
-      <div className="hidden md:flex gap-3 flex-1 justify-center">
-        {navLinks.map((link) => {
-          const isActive = currentPage === link.label;
-          const activeColor = isDark ? "text-white" : "text-black";
-
-          return (
-            <a
-              key={link.key}
-              href={link.href}
-              className={`${pillClass} transition-colors ${
-                isActive ? activeColor : `${hoverClass} ${isDark ? "hover:text-white" : "hover:text-black"}`
-              }`}
-            >
-              <span className="opacity-40">[{link.key}]</span> {link.label}
-              {link.icon && <link.icon className="w-3 h-3 inline-block -mt-0.5 ml-0.5" />}
-            </a>
-          );
-        })}
-      </div>
+      <div className="flex-1" />
 
       {/* Right side — pinned right */}
       <div className="flex items-center gap-3 shrink-0">
         {isDark && (
           <>
-            <div className="relative w-64 hidden md:block">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-500" />
-              <input
-                type="text"
-                placeholder="Search..."
-                className="w-full bg-white/[0.06] border border-white/[0.12] rounded-md py-1.5 pl-9 pr-8 text-xs text-white placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-white/15 focus:border-white/15 transition-all"
-              />
-              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1 py-0.5 rounded border border-white/[0.08] text-[9px] text-neutral-500">
-                /
-              </div>
-            </div>
+            {searchSlot}
             <button className="bg-white text-black px-3 py-1.5 rounded-md hover:bg-neutral-200 transition-colors text-xs font-medium border border-white">
               Join The Frontier
             </button>
@@ -221,29 +208,13 @@ export default function V2Nav({ currentPage, variant = "light" }: V2NavProps) {
             <HeroVisualDropdown />
             <a
               href="#"
-              className="nav-pill text-white transition-colors v2-nav-hover"
-              style={{
-                background: "rgba(0, 0, 0, 0.75)",
-                backdropFilter: "blur(8px)",
-                WebkitBackdropFilter: "blur(8px)",
-                borderColor: "rgba(0, 0, 0, 0.3)",
-              }}
+              className="nav-pill glow-btn relative text-white transition-colors"
             >
-              <span className="opacity-50">[C]</span> CONTACT
+              <span className="relative z-10">CONTACT</span>
             </a>
           </>
         )}
       </div>
     </nav>
-    {/* Gradient bottom line — darkest in center, fades at edges */}
-    <div
-      style={{
-        height: 1,
-        background: isDark
-          ? "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 5%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 95%, transparent 100%)"
-          : "linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.1) 5%, rgba(0,0,0,0.18) 50%, rgba(0,0,0,0.1) 95%, transparent 100%)",
-      }}
-    />
-    </div>
   );
 }

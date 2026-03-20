@@ -7,12 +7,12 @@ const HeroVisualContext = createContext<{
   visualId: HeroVisualId;
   setVisualId: (id: HeroVisualId) => void;
 }>({
-  visualId: "original",
+  visualId: "rocket-morph-full",
   setVisualId: () => {},
 });
 
 export function HeroVisualProvider({ children }: { children: React.ReactNode }) {
-  const [visualId, setVisualId] = useState<HeroVisualId>("original");
+  const [visualId, setVisualId] = useState<HeroVisualId>("rocket-morph-full");
   return (
     <HeroVisualContext.Provider value={{ visualId, setVisualId }}>
       {children}

@@ -13,6 +13,7 @@ import dynamic from "next/dynamic";
 import { ArrowRight, Building2, Users, Crown, Clock, Rocket } from "lucide-react";
 import gsap from "gsap";
 import { useHeroVisual } from "./HeroVisualContext";
+import GlowButton from "./GlowButton";
 import { heroVisuals } from "./HeroVisuals";
 
 const UnicornScene = dynamic(() => import("unicornstudio-react/next"), { ssr: false });
@@ -156,44 +157,7 @@ function GlitchWord() {
   return <span ref={textRef} style={{ display: "inline", overflow: "hidden", whiteSpace: "nowrap" }}>Systems</span>;
 }
 
-/* ─── Sparkle Button ─── */
-function GlowButton({ href, children }: { href: string; children: React.ReactNode }) {
-  const btnRef = useRef<HTMLAnchorElement>(null);
-  const [sparkles, setSparkles] = useState<{ id: number; x: number; y: number; delay: number }[]>([]);
-
-  useEffect(() => {
-    const count = 6;
-    const initial = Array.from({ length: count }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      delay: Math.random() * 3,
-    }));
-    setSparkles(initial);
-  }, []);
-
-  return (
-    <a
-      ref={btnRef}
-      href={href}
-      className="glow-btn relative px-6 py-3 rounded-md font-medium text-sm flex items-center gap-2 overflow-hidden"
-    >
-      <span className="glow-btn-aura" />
-      {sparkles.map((s) => (
-        <span
-          key={s.id}
-          className="sparkle-dot"
-          style={{
-            left: `${s.x}%`,
-            top: `${s.y}%`,
-            animationDelay: `${s.delay}s`,
-          }}
-        />
-      ))}
-      <span className="relative z-10 flex items-center gap-2">{children}</span>
-    </a>
-  );
-}
+/* GlowButton imported from ./GlowButton */
 
 export default function HeroSection() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -268,7 +232,7 @@ export default function HeroSection() {
             <span className="font-mono-ui text-[10px] uppercase tracking-widest text-neutral-500 bg-neutral-100 border border-dashed border-neutral-300 rounded px-2.5 py-1">YC-Backed</span>
           </div>
           <div className="flex flex-wrap items-center gap-4 mb-4">
-            <GlowButton href="/v2/services">
+            <GlowButton href="/v2/services" className="px-6 py-3">
               Explore the Growth Studio <ArrowRight className="w-4 h-4" />
             </GlowButton>
             <a
@@ -302,7 +266,7 @@ export default function HeroSection() {
                 {marqueeItems.map((item, j) => (
                   <span key={`${i}-${j}`} className="contents">
                     <span className="px-8 flex items-center gap-2.5">
-                      <span className="marquee-square" style={{ animationDelay: `${j * 0.5}s` }} />
+                      <span className="marquee-square" style={{ animationDelay: `${j * 0.5}s` }} aria-hidden="true" />
                       <item.icon className="w-3.5 h-3.5" /> {item.text}
                     </span>
                     |
@@ -320,10 +284,31 @@ export default function HeroSection() {
   return (
     <div ref={containerRef} className="relative flex flex-col border-b border-black/10" style={{ height: "calc(100vh + 40px)", maxHeight: 1120 }}>
       {/* Main hero content area — fills viewport minus marquee */}
-      <div className="relative flex-1 overflow-hidden">
+      <div className={`relative flex-1 ${visualId.endsWith("-full") ? "" : "overflow-hidden"}`}>
+
+        {/* ── Full particle overlay (same position as staircase, no clip) ── */}
+        {cellSize > 0 && visualId.endsWith("-full") && (() => {
+          const match = heroVisuals.find((v) => v.id === visualId);
+          const FullVisual = match?.component;
+          return FullVisual ? (
+            <div
+              className="absolute"
+              style={{
+                left: colLeft(3),
+                top: rowTop(1),
+                width: stairW,
+                height: stairH,
+              }}
+            >
+              <div style={{ position: "relative", width: stairW, height: stairH, overflow: "visible" }}>
+                <FullVisual width={stairW} height={stairH} />
+              </div>
+            </div>
+          ) : null;
+        })()}
 
         {/* ── Staircase (absolutely positioned to align with grid) ── */}
-        {cellSize > 0 && (
+        {cellSize > 0 && !visualId.endsWith("-full") && (
           <>
             <div
               className="absolute overflow-hidden"
@@ -400,9 +385,40 @@ export default function HeroSection() {
                 (() => {
                   const match = heroVisuals.find((v) => v.id === visualId);
                   const VisualComponent = match?.component;
+                  const isParticleScene = ["reactor", "gear-particles", "rocket-particles", "morph"].includes(visualId);
+                  const isParticleSceneDark = isParticleScene; // dark versions need black bg
                   return VisualComponent ? (
-                    <div style={{ position: "relative", width: stairW, height: stairH }}>
+                    <div style={{ position: "relative", width: stairW, height: stairH, background: isParticleSceneDark ? "#000" : undefined }}>
                       <VisualComponent width={stairW} height={stairH} />
+                      {/* Vignette for particle scenes — lighter edges, darker center */}
+                      {isParticleScene && (
+                        <div
+                          className="absolute inset-0 pointer-events-none"
+                          style={{
+                            background: "radial-gradient(ellipse at center, transparent 30%, rgba(255,255,255,0.06) 100%)",
+                          }}
+                        />
+                      )}
+                      {/* Grayscale noise */}
+                      <div
+                        className="absolute inset-0 pointer-events-none"
+                        style={{
+                          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 1024 1024' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.5' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+                          backgroundSize: "512px 512px",
+                          opacity: isParticleScene ? 0.15 : 0.35,
+                          mixBlendMode: isParticleScene ? "screen" : "multiply",
+                        }}
+                      />
+                      {/* CRT scanlines */}
+                      <div
+                        className="absolute inset-0 pointer-events-none"
+                        style={{
+                          backgroundImage: isParticleScene
+                            ? "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.03) 2px, rgba(255,255,255,0.03) 3px)"
+                            : "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.12) 2px, rgba(0,0,0,0.12) 3px)",
+                          opacity: 0.5,
+                        }}
+                      />
                     </div>
                   ) : null;
                 })()
@@ -438,18 +454,6 @@ export default function HeroSection() {
             <div className="font-mono-ui text-[10px] text-neutral-400 uppercase tracking-widest leading-relaxed" style={{ width: cellSize }}>
               Demand Curve<br /><span className="text-neutral-300">& Growth Systems</span>
             </div>
-            {/* Credential tags — aligned to col 1 */}
-            <div className="flex items-center gap-2" style={{ marginLeft: GAP }}>
-              <span className="font-mono-ui text-[10px] uppercase tracking-widest text-neutral-500 bg-neutral-100 border border-dashed border-neutral-300 rounded px-2.5 py-1">
-                10 Years Proven
-              </span>
-              <span className="font-mono-ui text-[10px] uppercase tracking-widest text-neutral-500 bg-neutral-100 border border-dashed border-neutral-300 rounded px-2.5 py-1">
-                YC-Backed
-              </span>
-              <span className="font-mono-ui text-[10px] uppercase tracking-widest text-neutral-500 bg-neutral-100 border border-dashed border-neutral-300 rounded px-2.5 py-1">
-                4,500+ Startups
-              </span>
-            </div>
             {/* Clock — pushed to the right */}
             <div className="ml-auto font-mono-ui text-base tracking-tight text-neutral-500 tabular-nums" style={{ paddingRight: 8 }}>
               <LiveClock />
@@ -482,7 +486,7 @@ export default function HeroSection() {
           {/* CTA */}
           <div className="pointer-events-auto" style={{ maxWidth: leftContentWidth || undefined }}>
             <div className="flex flex-wrap items-center gap-4">
-              <GlowButton href="/v2/services">
+              <GlowButton href="/v2/services" className="px-6 py-3">
                 Explore the Growth Studio <ArrowRight className="w-4 h-4" />
               </GlowButton>
               <a
@@ -531,7 +535,7 @@ export default function HeroSection() {
               {marqueeItems.map((item, j) => (
                 <span key={`${i}-${j}`} className="contents">
                   <span className="px-8 flex items-center gap-2.5">
-                    <span className="marquee-square" style={{ animationDelay: `${j * 0.5}s` }} />
+                    <span className="marquee-square" style={{ animationDelay: `${j * 0.5}s` }} aria-hidden="true" />
                     <item.icon className="w-3.5 h-3.5" /> {item.text}
                   </span>
                   |
