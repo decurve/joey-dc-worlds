@@ -125,29 +125,29 @@ export default function V2Page() {
   return (
     <HeroVisualProvider>
     <div className="v2-world v2-bg text-[#1a1a1a] text-sm selection:bg-yellow-200 selection:text-black" style={{ fontFamily: "'IBM Plex Mono', ui-monospace, monospace", position: "relative", zIndex: 2, overflowX: "clip" }}>
-      {/* ── Side borders + checkerboard (hex.tech style) ── */}
-      {/* Single border line 16px from each viewport edge, checkerboard fills 0-16px strip */}
+      {/* ── Side borders + checkerboard pattern ── */}
+      {/* On wide screens (>1600px), the checkerboard extends from viewport edge to the 1600px container edge */}
       <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 50 }}>
-        {/* Left border */}
-        <div className="absolute top-0 bottom-0" style={{ left: 16, borderLeft: "1px solid rgba(0,0,0,0.10)" }} />
-        {/* Right border */}
-        <div className="absolute top-0 bottom-0" style={{ right: 16, borderRight: "1px solid rgba(0,0,0,0.10)" }} />
-        {/* Left checkerboard strip */}
+        {/* Left checkerboard — fills from viewport edge to container edge */}
         <div
           className="absolute top-0 bottom-0 left-0"
           style={{
-            width: 16,
+            width: "max(16px, calc((100vw - 1800px) / 2))",
             background: "repeating-conic-gradient(#e4e8ec 0% 25%, #eef1f4 0% 50%) 0 0 / 5px 5px",
           }}
         />
-        {/* Right checkerboard strip */}
+        {/* Right checkerboard */}
         <div
           className="absolute top-0 bottom-0 right-0"
           style={{
-            width: 16,
+            width: "max(16px, calc((100vw - 1800px) / 2))",
             background: "repeating-conic-gradient(#e4e8ec 0% 25%, #eef1f4 0% 50%) 0 0 / 5px 5px",
           }}
         />
+        {/* Left border line — at the inner edge of the checkerboard */}
+        <div className="absolute top-0 bottom-0" style={{ left: "max(16px, calc((100vw - 1800px) / 2))", borderLeft: "1px solid rgba(0,0,0,0.10)" }} />
+        {/* Right border line */}
+        <div className="absolute top-0 bottom-0" style={{ right: "max(16px, calc((100vw - 1800px) / 2))", borderRight: "1px solid rgba(0,0,0,0.10)" }} />
       </div>
 
       {/* 1. NAVIGATION */}
@@ -171,9 +171,9 @@ export default function V2Page() {
         </span>
       </div>
 
-      {/* Main content — everything lives inside the 16px side borders */}
+      {/* Main content — contained within 1600px, centered */}
       {/* z-index: 3 so it sits ABOVE the fixed teaser. v2-bg so it has its own background to cover the teaser. */}
-      <div className="relative v2-bg" style={{ margin: "0 17px", zIndex: 3 }}>
+      <div className="relative v2-bg mx-auto" style={{ maxWidth: 1800, marginLeft: "max(17px, calc((100vw - 1800px) / 2))", marginRight: "max(17px, calc((100vw - 1800px) / 2))", zIndex: 3 }}>
 
         {/* 2. HERO — grid-aligned hero with staircase image */}
         <div className="relative" style={{ marginTop: -40 }}>
@@ -350,7 +350,7 @@ export default function V2Page() {
             style={{
               backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 1024 1024' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.5' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
               backgroundSize: "512px 512px",
-              opacity: 0.18,
+              opacity: 0.14,
               mixBlendMode: "multiply",
             }}
           />

@@ -256,8 +256,8 @@ function MiniGame({ onClose }: { onClose: () => void }) {
   }, [jump, onClose]);
 
   return (
-    <div className="absolute inset-0 z-20 bg-[#fafafa]">
-      <canvas ref={canvasRef} className="w-full h-full cursor-pointer" />
+    <div className="absolute inset-0 z-20 bg-[#fafafa]" style={{ minHeight: 300 }}>
+      <canvas ref={canvasRef} className="w-full h-full cursor-pointer" style={{ display: 'block' }} />
     </div>
   );
 }
